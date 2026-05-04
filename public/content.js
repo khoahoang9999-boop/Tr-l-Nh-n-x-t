@@ -44,14 +44,24 @@ async function fillCommentsAsync(config) {
     let rows = [];
     switch(platform) {
         case 'csdl':
-            rows = document.querySelectorAll('tr.rgRow, tr.rgAltRow');
-            if (rows.length === 0) rows = document.querySelectorAll('tr'); 
+            rows = Array.from(document.querySelectorAll('tr.rgRow, tr.rgAltRow'));
+            if (rows.length === 0) {
+                // Heuristic: rows in a table body that appear to have data
+                rows = Array.from(document.querySelectorAll('tbody tr')).filter(tr => tr.querySelectorAll('td').length >= 3);
+            }
             break;
         case 'vnedu':
-            rows = document.querySelectorAll('.x-grid-row, .x-grid3-row, tr');
+            rows = Array.from(document.querySelectorAll('.x-grid-row:not(.x-grid-row-summary), .x-grid3-row, tr.x-grid-row'));
+            if (rows.length === 0) {
+                rows = Array.from(document.querySelectorAll('tbody tr')).filter(tr => tr.querySelectorAll('td').length >= 3);
+            }
             break;
         default:
-            rows = document.querySelectorAll('tr');
+            rows = Array.from(document.querySelectorAll('tbody tr')).filter(tr => tr.querySelectorAll('td').length >= 3);
+    }
+
+    if (rows.length === 0) {
+        rows = Array.from(document.querySelectorAll('tr'));
     }
 
     if (rows.length === 0) {
@@ -107,20 +117,39 @@ async function fillCommentsAsync(config) {
                 }
             }
 
-            const textInputs = Array.from(row.querySelectorAll('textarea:not([disabled]):not([readonly]), input[type="text"]:not([readonly]):not([disabled]), input.nhan-xet'));
+            const textInputs = Array.from(row.querySelectorAll('textarea, input[type="text"], input:not([type]), input.nhan-xet'))
+                .filter(el => !el.disabled && !el.readOnly && el.type !== 'hidden' && el.offsetParent !== null && !el.hidden && el.style.display !== 'none');
+            
             if (textInputs.length === 0) continue;
             
             let commentInput = null;
-            const textareas = textInputs.filter(el => el.tagName.toLowerCase() === 'textarea');
             
-            if (role === 'HOC_BA') {
-                // For Hoc Ba, prefer the LAST textarea or input
-                commentInput = textareas[textareas.length - 1] || textInputs[textInputs.length - 1];
+            // Heuristic to filter out "Mã nhận xét" (code) inputs which are usually small or have specific naming
+            const isCodeInput = (el) => {
+                if (el.tagName.toLowerCase() === 'textarea') return false;
+                const attrStr = (el.id + " " + (el.name || "") + " " + (el.className || "")).toLowerCase();
+                if (attrStr.includes('manx') || attrStr.includes('ma_nx') || attrStr.includes('macmt')) return true;
+                if (el.maxLength && el.maxLength > 0 && el.maxLength < 20) return true;
+                if (el.style && el.style.width) {
+                    const w = parseInt(el.style.width);
+                    if (w > 0 && w < 60) return true;
+                }
+                return false;
+            };
+
+            const contentInputs = textInputs.filter(el => !isCodeInput(el));
+            
+            if (contentInputs.length > 0) {
+                if (role === 'HOC_BA') {
+                    // Always pick the LAST valid comment input for Hoc Ba
+                    commentInput = contentInputs[contentInputs.length - 1];
+                } else {
+                    // Always pick the FIRST valid comment input for GVBM
+                    commentInput = contentInputs[0];
+                }
             } else {
-                // For GVBM, prefer the FIRST textarea (usually Mon Hoc comment) or specific class
-                commentInput = textareas[0] 
-                    || textInputs.find(el => el.className.toLowerCase().includes('nhan-xet') || el.placeholder?.toLowerCase().includes('nhận xét'))
-                    || textInputs[textInputs.length - 1];
+                // Fallback if our filter excluded everything
+                commentInput = textInputs[role === 'HOC_BA' ? textInputs.length - 1 : 0];
             }
                 
             if (!commentInput) continue;
@@ -175,8 +204,20 @@ async function fillCommentsAsync(config) {
             }
 
             if (chosenComment) {
+                const textToFill = formatComment(chosenComment, role);
                 commentInput.focus();
-                commentInput.value = formatComment(chosenComment, role);
+                
+                const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+                const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+                
+                if (commentInput.tagName.toLowerCase() === 'textarea' && nativeTextAreaValueSetter) {
+                    nativeTextAreaValueSetter.call(commentInput, textToFill);
+                } else if (nativeInputValueSetter && commentInput.tagName.toLowerCase() === 'input') {
+                    nativeInputValueSetter.call(commentInput, textToFill);
+                } else {
+                    commentInput.value = textToFill;
+                }
+
                 commentInput.dispatchEvent(new Event('input', { bubbles: true }));
                 commentInput.dispatchEvent(new Event('change', { bubbles: true }));
                 commentInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));

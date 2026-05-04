@@ -19,7 +19,11 @@ async function fillCommentsAsync(config) {
     if (method === 'template' && !db) {
         throw new Error("Chưa khởi tạo dữ liệu Mẫu! Vui lòng mở Cấu hình Lời phê trước.");
     }
-    if (method === 'ai' && !storageResult.geminiApiKey) {
+    const DEFAULT_KEYS = "AIzaSyBZ7HYd1I4jfOZQXjFuL4w1eYC_a-7DhZE, AIzaSyC8yFEfZdR9BwF_e5NbCUYFgW2RZB8wBuI, AIzaSyAz7tBBhmWQ8nzRDPLU9lK6IkOV0AZIKDg";
+    let resolvedApiKey = storageResult.geminiApiKey;
+    if (!resolvedApiKey || resolvedApiKey.trim() === '') resolvedApiKey = DEFAULT_KEYS;
+
+    if (method === 'ai' && (!resolvedApiKey || resolvedApiKey.trim() === '')) {
         throw new Error("Chưa cấu hình API Key cho AI!");
     }
 
@@ -69,6 +73,7 @@ async function fillCommentsAsync(config) {
     }
 
     let fillCount = 0;
+    let lastRowError = null;
     
     // Validate pool if using template
     const getCommentsPool = () => {
@@ -81,6 +86,23 @@ async function fillCommentsAsync(config) {
     
     const commentsPool = method === 'template' ? getCommentsPool() : null;
     
+    if (method === 'template') {
+        if (!commentsPool) {
+            throw new Error(`Môn học/Hạng mục này chưa có dữ liệu lời phê. Vui lòng cấu hình trước.`);
+        }
+        let totalCount = 0;
+        if (role === 'GVBM') {
+            Object.values(commentsPool).forEach(arr => {
+                if (Array.isArray(arr)) totalCount += arr.length;
+            });
+        } else {
+            if (Array.isArray(commentsPool)) totalCount += commentsPool.length;
+        }
+        if (totalCount === 0) {
+            throw new Error(`Chưa có câu lời phê nào cho lựa chọn này. Vui lòng thêm mẫu.`);
+        }
+    }
+
     // Process rows sequentially to avoid API rate limiting issues if AI is used
     for (const row of Array.from(rows)) {
         try {
@@ -98,23 +120,19 @@ async function fillCommentsAsync(config) {
             const isHeader = textCells.some(t => t.toLowerCase() === 'họ tên' || t.toLowerCase() === 'stt');
             if (isHeader) continue;
 
+            // Skip filter bars
+            const isFilterBar = textCells.some(t => {
+                const lower = t.toLowerCase();
+                return lower.includes('khối:') || lower === 'khối' || 
+                       lower.includes('lớp:') || lower === 'lớp' || 
+                       lower.includes('môn học:') || lower === 'môn học' ||
+                       lower.includes('học kỳ:') || lower === 'học kỳ';
+            });
+            if (isFilterBar) continue;
+
             const possibleNames = textCells.filter(t => t.length >= 5 && t.length < 35 && !t.match(/\d/));
             if (possibleNames.length > 0) {
                 tenHS = possibleNames[0].split(' ').pop(); // Just take the first name roughly
-            }
-
-            if (role === 'GVBM' || method === 'ai') {
-                const numberValues = Array.from(row.querySelectorAll('input[type="text"], span, td, div.x-grid-cell-inner'))
-                                      .map(el => {
-                                          let val = el.value || el.innerText;
-                                          if (typeof val === 'string') val = val.replace(',', '.').trim();
-                                          return parseFloat(val);
-                                      })
-                                      .filter(num => !isNaN(num) && num <= 10 && num >= 0);
-                
-                if (numberValues.length > 0) {
-                    averageScore = numberValues[numberValues.length - 1]; // Pick the last number logically
-                }
             }
 
             const textInputs = Array.from(row.querySelectorAll('textarea, input[type="text"], input:not([type]), input.nhan-xet'))
@@ -148,11 +166,79 @@ async function fillCommentsAsync(config) {
                     commentInput = contentInputs[0];
                 }
             } else {
-                // Fallback if our filter excluded everything
+                // Fallback: If no content inputs found by our filter (for example, the input is tiny and has no name), stick to the original plan
                 commentInput = textInputs[role === 'HOC_BA' ? textInputs.length - 1 : 0];
             }
                 
             if (!commentInput) continue;
+
+            if (role === 'GVBM' || method === 'ai') {
+                // Find the closest ancestor TD to look backwards from
+                const commentTd = commentInput.closest('td, div.x-grid-cell, div.x-grid3-cell');
+                let foundScore = null;
+
+                if (commentTd && commentTd.parentElement) {
+                    const allCells = Array.from(commentTd.parentElement.querySelectorAll('td, div.x-grid-cell, div.x-grid3-cell'));
+                    const commentIndex = allCells.indexOf(commentTd);
+                    
+                    if (commentIndex !== -1) {
+                        for (let i = commentIndex - 1; i >= 0; i--) {
+                            const cell = allCells[i];
+                            const text = cell.innerText.trim();
+                            // If there are inputs that might have the score inside
+                            const possibleInputs = Array.from(cell.querySelectorAll('input[type="text"], span, div.x-grid-cell-inner'));
+                            let valsToTry = [text];
+                            possibleInputs.forEach(el => {
+                                valsToTry.push((el.value || el.innerText || "").trim());
+                            });
+
+                            for (let val of valsToTry) {
+                                if (val) {
+                                    const cleaned = val.replace(',', '.').trim();
+                                    // Match exact floats
+                                    if (/^\d{1,2}(\.\d+)?$/.test(cleaned)) {
+                                        const parsed = parseFloat(cleaned);
+                                        if (!isNaN(parsed) && parsed >= 0 && parsed <= 10) {
+                                            foundScore = parsed;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (foundScore !== null) break;
+                        }
+                    }
+                }
+                
+                // Fallback to the old logic if we didn't find anything backwards
+                if (foundScore !== null) {
+                    averageScore = foundScore;
+                } else {
+                    const targetCells = Array.from(row.querySelectorAll('td, div.x-grid-cell, div.x-grid3-cell')).slice(1);
+                    const numberValues = Array.from(targetCells).flatMap(cell => {
+                        const els = Array.from(cell.querySelectorAll('input[type="text"], span, div.x-grid-cell-inner'));
+                        return [cell.innerText, ...els.map(e => e.value || e.innerText)];
+                    })
+                    .map(val => {
+                        if (typeof val === 'string') {
+                            val = val.replace(',', '.').trim();
+                            // Specific check to avoid matching dates or strings as numbers roughly
+                            if (/^\d{1,2}(\.\d+)?$/.test(val)) {
+                                return parseFloat(val);
+                            }
+                        }
+                        return NaN;
+                    })
+                    .filter(num => !isNaN(num) && num <= 10 && num >= 0);
+                    
+                    if (numberValues.length > 0) {
+                        averageScore = numberValues[numberValues.length - 1];
+                    }
+                }
+            }
+
+            // Only proceed if we found a score, as requested: "nếu các cột đó có điểm thì sẽ điền"
+            if (averageScore === null) continue;
 
             let chosenComment = "";
             let level = "Đạt";
@@ -181,7 +267,7 @@ async function fillCommentsAsync(config) {
                         chrome.runtime.sendMessage({
                             action: "generateAIComment",
                             payload: {
-                                apiKey: storageResult.geminiApiKey,
+                                apiKey: resolvedApiKey,
                                 modelId: storageResult.geminiModelId,
                                 promptTemplate: storageResult.aiPromptTemplate,
                                 diem: averageScore !== null ? averageScore : (level + " (Đánh giá chung)"),
@@ -198,9 +284,14 @@ async function fillCommentsAsync(config) {
                     chosenComment = aiResult;
                 } catch (apiErr) {
                     console.warn("AI generation failed for a row", apiErr);
+                    lastRowError = apiErr;
                     chosenComment = "";
                 }
-                commentInput.placeholder = oldPhm;
+                commentInput.placeholder = oldPhm || "";
+                
+                // Add sleep to avoid API rate limit (15 req/min on free tier => 4s per req)
+                // If it fails with 429, the error is caught above, but we still want to wait.
+                await new Promise(resolve => setTimeout(resolve, 4000));
             }
 
             if (chosenComment) {
@@ -227,11 +318,15 @@ async function fillCommentsAsync(config) {
             }
         } catch (err) {
             console.warn("Row iteration error:", err);
+            lastRowError = err;
         }
     }
 
     if (fillCount === 0) {
-        throw new Error("Không thể điền dữ liệu, vui lòng kiểm tra lại thiết lập.");
+        if (lastRowError) {
+            throw new Error(`Lỗi: ${lastRowError.message || lastRowError}`);
+        }
+        throw new Error("Không tìm thấy hàng nào có điểm để điền. Vui lòng đảm bảo bảng đã có điểm hoặc chọn đúng ô.");
     }
     return fillCount;
 }

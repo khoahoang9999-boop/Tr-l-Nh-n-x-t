@@ -1,3 +1,11 @@
+// Prevent "Cannot set property fetch of #<Window> which has only a getter" from third-party libraries
+let origFetch = window.fetch;
+Object.defineProperty(window, 'fetch', {
+    get: () => origFetch,
+    set: () => {},
+    configurable: true
+});
+
 import { GRADE_LEVELS, getSubjects, EVAL_LEVELS } from './shared.js';
 import * as XLSX from 'xlsx';
 
@@ -93,9 +101,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiPromptTemplateInp = document.getElementById('aiPromptTemplate');
     const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 
-    if(chrome && chrome.storage && chrome.storage.local) {
+    const DEFAULT_KEYS = "AIzaSyBZ7HYd1I4jfOZQXjFuL4w1eYC_a-7DhZE, AIzaSyC8yFEfZdR9BwF_e5NbCUYFgW2RZB8wBuI, AIzaSyAz7tBBhmWQ8nzRDPLU9lK6IkOV0AZIKDg";
+
+    if(typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         chrome.storage.local.get(['geminiApiKey', 'geminiModelId', 'aiPromptTemplate', 'commentsData'], (result) => {
-            if(result.geminiApiKey) geminiApiKeyInp.value = result.geminiApiKey;
+            let currentKey = result.geminiApiKey;
+            if (!currentKey || currentKey.trim() === '') currentKey = DEFAULT_KEYS;
+            geminiApiKeyInp.value = currentKey;
+            
             if(result.geminiModelId) geminiModelIdInp.value = result.geminiModelId;
             if(result.aiPromptTemplate) aiPromptTemplateInp.value = result.aiPromptTemplate;
             
@@ -108,16 +121,21 @@ document.addEventListener('DOMContentLoaded', () => {
             renderData();
         });
     } else {
+        geminiApiKeyInp.value = DEFAULT_KEYS;
         updateDropdowns();
         renderData();
     }
 
     saveSettingsBtn.addEventListener('click', () => {
-        chrome.storage.local.set({
-            geminiApiKey: geminiApiKeyInp.value,
-            geminiModelId: geminiModelIdInp.value,
-            aiPromptTemplate: aiPromptTemplateInp.value
-        }, () => alert("Đã lưu cấu hình AI"));
+        if(typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({
+                geminiApiKey: geminiApiKeyInp.value,
+                geminiModelId: geminiModelIdInp.value,
+                aiPromptTemplate: aiPromptTemplateInp.value
+            }, () => alert("Đã lưu cấu hình AI"));
+        } else {
+            alert("Đã lưu cấu hình AI (Preview Mode)");
+        }
     });
 
     // Cascading logic
@@ -166,11 +184,11 @@ document.addEventListener('DOMContentLoaded', () => {
     tabs.forEach(tab => {
         tab.addEventListener('click', (e) => {
             tabs.forEach(t => {
-                t.classList.remove('border-blue-600', 'text-blue-600');
+                t.classList.remove('border-red-600', 'text-red-600');
                 t.classList.add('border-transparent', 'text-slate-400');
             });
             e.target.classList.remove('border-transparent', 'text-slate-400');
-            e.target.classList.add('border-blue-600', 'text-blue-600');
+            e.target.classList.add('border-red-600', 'text-red-600');
             
             currentRole = e.target.dataset.role;
             document.getElementById('gvbmAlert').style.display = currentRole === 'HOC_BA' ? 'flex' : 'none';

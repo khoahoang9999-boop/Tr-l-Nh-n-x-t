@@ -2,32 +2,27 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <script>
-        // Prevent "Cannot set property fetch of #<Window> which has only a getter" from third-party libraries
-        let origFetch = window.fetch;
-        Object.defineProperty(window, 'fetch', {
-            get: () => origFetch,
-            set: () => {},
-            configurable: true
-        });
-    </script>
     <link rel="stylesheet" href="/src/index.css">
     <style>
         body { width: 320px; margin: 0; font-family: sans-serif; }
     </style>
 </head>
 <body class="bg-white text-slate-800">
-    <div class="bg-blue-600 p-3 flex justify-between items-center text-white">
-        <div class="flex items-center gap-2">
-            <div class="w-6 h-6 bg-white/20 rounded-sm flex items-center justify-center text-[10px] font-bold">PRO</div>
-            <span class="text-xs font-bold uppercase tracking-wider">Trợ lý Nhận xét</span>
+    <div class="bg-slate-900 flex items-center justify-center text-white relative h-12 shadow-md">
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none flex-col mt-0.5">
+            <div class="flex items-center gap-1.5 drop-shadow">
+                <span class="bg-gradient-to-b from-yellow-200 to-yellow-500 text-blue-900 px-1 py-0.5 rounded text-[10px] font-black tracking-wider shadow-sm">PRO</span>
+                <span class="text-[14px] font-bold tracking-wide bg-gradient-to-b from-yellow-50 to-yellow-300 bg-clip-text text-transparent">Trợ lý Nhận xét</span>
+            </div>
         </div>
-        <svg id="settingsBtn" class="w-4 h-4 opacity-70 cursor-pointer hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <div class="absolute right-3 top-0 bottom-0 flex items-center">
+            <svg id="settingsBtn" class="w-4 h-4 opacity-70 cursor-pointer hover:opacity-100 transition-opacity relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
     </div>
     <div class="p-4 space-y-3">
         <div class="flex gap-2">
             <div class="flex-1">
-                <label class="text-[10px] font-bold text-slate-400 uppercase">Cấp học</label>
+                <label class="text-[10px] font-bold text-red-500 uppercase">Cấp học</label>
                 <select id="capHoc" class="w-full mt-1 p-2 text-sm bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-500 transition-colors">
                     <option value="TH">Tiểu học (TH)</option>
                     <option value="THCS" selected>Trung học Cơ sở (THCS)</option>
@@ -35,47 +30,41 @@
                 </select>
             </div>
             <div class="flex-1">
-                <label class="text-[10px] font-bold text-slate-400 uppercase">Khối lớp</label>
+                <label class="text-[10px] font-bold text-red-500 uppercase">Khối lớp</label>
                 <select id="khoiLop" class="w-full mt-1 p-2 text-sm bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-500 transition-colors">
                     <!-- Dynamic -->
                 </select>
             </div>
         </div>
         <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase">Nền tảng</label>
+            <label class="text-[10px] font-bold text-red-500 uppercase">Nền tảng</label>
             <select id="platform" class="w-full mt-1 p-2 text-sm bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-500 transition-colors">
                 <option value="csdl">CSDL Ngành</option>
                 <option value="vnedu">vnEdu</option>
             </select>
         </div>
         <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase">Vai trò / Hạng mục</label>
+            <label class="text-[10px] font-bold text-red-500 uppercase">Vai trò / Hạng mục</label>
             <select id="roleItem" class="w-full mt-1 p-2 text-sm bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-500 transition-colors">
-                <option value="GVBM">GVBM - Điểm / Đánh giá</option>
-                <option value="HOC_BA">Học bạ (GVCN / Lãnh đạo)</option>
+                <option value="GVBM">Nhận xét môn học (HK)</option>
+                <option value="HOC_BA">Nhận xét cuối năm (Ghi Học Bạ)</option>
             </select>
         </div>
         <div id="subjectContainer">
-            <label class="text-[10px] font-bold text-slate-400 uppercase">Môn học / Hạng mục</label>
+            <label class="text-[10px] font-bold text-red-500 uppercase">Môn học / Hạng mục</label>
             <select id="subject" class="w-full mt-1 p-2 text-sm bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-500 transition-colors">
                 <!-- Dynamic -->
             </select>
         </div>
         <div class="pt-2 border-t border-slate-100 flex gap-4">
-            <label class="text-[10px] font-bold text-slate-400 uppercase pt-1">Nhận xét:</label>
+            <label class="text-[10px] font-bold text-red-500 uppercase pt-1">Nhận xét:</label>
             <label class="flex items-center gap-1.5 text-sm cursor-pointer">
-                <input type="radio" name="method" value="template" checked class="text-blue-600 focus:ring-blue-500"> Mẫu
+                <input type="radio" name="method" value="template" checked class="text-blue-600 focus:ring-blue-500"> <span class="text-red-500 font-bold">Mẫu</span>
             </label>
             <label class="flex items-center gap-1.5 text-sm cursor-pointer">
                 <input type="radio" name="method" value="ai" id="aiMethod" class="text-indigo-600 focus:ring-indigo-500"> 
-                <span class="bg-indigo-100 text-indigo-700 px-1 py-0.5 rounded text-xs font-bold leading-none">AI</span>
+                <span class="bg-indigo-100 text-red-500 px-1 py-0.5 rounded text-xs font-bold leading-none">AI</span>
             </label>
-        </div>
-        <div id="aiSettings" class="hidden flex-col gap-2 pt-2 border-t border-slate-100 bg-indigo-50/50 p-2 rounded -mx-1">
-            <label class="text-[10px] font-bold text-indigo-400 uppercase">Gemini API Key</label>
-            <input type="password" id="geminiApiKeyPopup" class="w-full p-2 text-sm bg-white border border-indigo-100 rounded outline-none focus:border-indigo-400 transition-colors" placeholder="AIzaSy...">
-            <button id="saveApiKeyBtn" class="text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm py-1.5 rounded cursor-pointer transition-colors w-full">Lưu API Key</button>
-            <div class="text-[10px] text-center text-slate-500 mt-1">Lấy key tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-500 hover:underline">Google AI Studio</a>.</div>
         </div>
         <div class="pt-2">
             <button id="runBtn" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded shadow-md shadow-blue-100 hover:bg-blue-700 transition-colors cursor-pointer">Chạy Tự Động Điền</button>

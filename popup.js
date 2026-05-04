@@ -1,3 +1,11 @@
+// Prevent "Cannot set property fetch of #<Window> which has only a getter" from third-party libraries
+let origFetch = window.fetch;
+Object.defineProperty(window, 'fetch', {
+    get: () => origFetch,
+    set: () => {},
+    configurable: true
+});
+
 import { GRADE_LEVELS, getSubjects } from './shared.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -39,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateKhoiLop();
 
     const openOptions = (tabParam = null) => {
-        let url = chrome.runtime.getURL('options.html');
+        let url = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL ? chrome.runtime.getURL('options.html') : '/options.html';
         if (typeof tabParam === 'string') url += `?tab=${tabParam}`;
         window.open(url);
     };
@@ -47,36 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     optionsBtn.addEventListener('click', openOptions);
     settingsBtn.addEventListener('click', openOptions);
 
-    const aiSettings = document.getElementById('aiSettings');
-    const methodRadios = document.querySelectorAll('input[name="method"]');
-    const geminiApiKeyPopup = document.getElementById('geminiApiKeyPopup');
-    const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
-
-    methodRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.value === 'ai') {
-                aiSettings.classList.remove('hidden');
-                aiSettings.classList.add('flex');
-                chrome.storage.local.get(['geminiApiKey'], (res) => {
-                    if (res.geminiApiKey) geminiApiKeyPopup.value = res.geminiApiKey;
-                });
-            } else {
-                aiSettings.classList.add('hidden');
-                aiSettings.classList.remove('flex');
-            }
-        });
-    });
-
-    saveApiKeyBtn.addEventListener('click', () => {
-        const key = geminiApiKeyPopup.value.trim();
-        if(!key) return alert("Vui lòng nhập API Key!");
-        chrome.storage.local.set({
-            geminiApiKey: key
-        }, () => {
-            setStatus("Đã lưu API Key!", "success");
-            setTimeout(() => setStatus("Sẵn sàng tự động điền.", "info"), 2000);
-        });
-    });
+    const DEFAULT_KEYS = "AIzaSyBZ7HYd1I4jfOZQXjFuL4w1eYC_a-7DhZE, AIzaSyC8yFEfZdR9BwF_e5NbCUYFgW2RZB8wBuI, AIzaSyAz7tBBhmWQ8nzRDPLU9lK6IkOV0AZIKDg";
 
     const setStatus = (msg, type) => {
         const text = document.getElementById('statusText');
@@ -107,13 +86,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (method === 'ai') {
-            chrome.storage.local.get(['geminiApiKey'], (res) => {
-                if (!res.geminiApiKey) {
-                    setStatus("Vui lòng Cấu hình Trợ lý AI (Cài đặt)!", "error");
-                    return;
-                }
+            if(typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+                chrome.storage.local.get(['geminiApiKey'], (res) => {
+                    let key = res.geminiApiKey;
+                    if (!key || key.trim() === '') key = DEFAULT_KEYS;
+                    if (!key || key.trim() === '') {
+                        setStatus("Vui lòng cấu hình API Key trong mục Cấu hình!", "error");
+                        return;
+                    }
+                    executeLogic({ platform, role, capHoc, khoiLop, subject, method });
+                });
+            } else {
                 executeLogic({ platform, role, capHoc, khoiLop, subject, method });
-            });
+            }
         } else {
             executeLogic({ platform, role, capHoc, khoiLop, subject, method });
         }
@@ -121,27 +106,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function executeLogic(config) {
         setStatus("Đang xử lý...", "default");
-        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-            if (tabs[0] && !tabs[0].url.startsWith('chrome://')) {
-                chrome.tabs.sendMessage(tabs[0].id, {
-                    action: "fillComments",
-                    config
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        setStatus("Lỗi kết nối. Hãy tải lại trang web!", "error");
-                    } else if (response && response.success) {
-                        if (response.count > 0) {
-                            setStatus(`Đã điền thành công ${response.count} dòng!`, "success");
+        if(typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+            chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+                if (tabs[0] && !tabs[0].url.startsWith('chrome://')) {
+                    chrome.tabs.sendMessage(tabs[0].id, {
+                        action: "fillComments",
+                        config
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            setStatus("Lỗi kết nối. Hãy tải lại trang web!", "error");
+                        } else if (response && response.success) {
+                            if (response.count > 0) {
+                                setStatus(`Đã điền thành công ${response.count} dòng!`, "success");
+                            } else {
+                                setStatus("Không tìm thấy ô nhận xét phù hợp!", "error");
+                            }
                         } else {
-                            setStatus("Không tìm thấy ô nhận xét phù hợp!", "error");
+                            setStatus(response?.error || 'Lỗi không xác định', "error");
                         }
-                    } else {
-                        setStatus(response?.error || 'Lỗi không xác định', "error");
-                    }
-                });
-            } else {
-                setStatus("Không thể chạy tiện ích trên trang này.", "error");
-            }
-        });
+                    });
+                } else {
+                    setStatus("Không thể chạy tiện ích trên trang này.", "error");
+                }
+            });
+        } else {
+            setStatus("Tính năng này chỉ hoạt động khi cài đặt Extension.", "error");
+        }
     }
 });

@@ -12,8 +12,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-async function handleAIGenerate({ apiKey, promptTemplate, diem, mon, ten, role }) {
+async function handleAIGenerate({ apiKey, modelId, promptTemplate, diem, mon, ten, role }) {
     if (!apiKey) throw new Error("Missing API Key");
+
+    const apiKeys = apiKey.split(/[\s,;]+/).filter(k => k.trim().length > 0);
+    if (apiKeys.length === 0) throw new Error("Missing API Key");
 
     // Replace template vars
     let promptText = promptTemplate || "Bạn là một giáo viên chuyên nghiệp. Nhận xét ngắn gọn, động viên học sinh đạt {diem} điểm môn {mon}. Không quá 12 từ.";
@@ -25,27 +28,57 @@ async function handleAIGenerate({ apiKey, promptTemplate, diem, mon, ten, role }
         promptText += " Đối với nhận xét học bạ, vui lòng tách riêng 3 mặt: Phẩm chất; Năng lực; Hoạt động ngoại khóa. Sử dụng dấu xuống dòng (\\n) hoặc ngắt dòng rõ ràng cho từng mặt.";
     }
 
-    const modelId = request.payload?.modelId || "gemini-1.5-flash";
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }],
-            generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 200,
+    const resolvedModelId = modelId || "gemini-1.5-flash";
+    let lastError = null;
+
+    const shuffledKeys = [...apiKeys].sort(() => Math.random() - 0.5);
+
+    for (const key of shuffledKeys) {
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${resolvedModelId}:generateContent?key=${key}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: promptText }] }],
+                    generationConfig: {
+                        temperature: 0.7,
+                        maxOutputTokens: 200,
+                    }
+                })
+            });
+
+            if (!res.ok) {
+                let errorMsg = `API Error: ${res.status}`;
+                try {
+                    const errData = await res.json();
+                    if (errData.error && errData.error.message) {
+                        errorMsg += ` - ${errData.error.message}`;
+                    }
+                } catch (e) {}
+                
+                const err = new Error(errorMsg);
+                if (res.status === 429 || res.status === 403 || res.status === 500 || res.status === 503) {
+                    lastError = err;
+                    continue; // Try the next key
+                }
+                throw err;
             }
-        })
-    });
 
-    if (!res.ok) {
-        throw new Error(`API Error: ${res.status}`);
+            const data = await res.json();
+            let result = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            
+            // Clean up markdown formatting if exists
+            result = result.replace(/\*\*/g, '').replace(/\*/g, '');
+            return { text: result.trim() };
+        } catch (e) {
+            lastError = e;
+            // Retry on fetch errors (e.g., network issues)
+            if (e.message.includes('fetch') || e.message.includes('API Error: 429') || e.message.includes('API Error: 403')) {
+                continue;
+            }
+            throw e;
+        }
     }
-
-    const data = await res.json();
-    let result = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
     
-    // Clean up markdown formatting if exists
-    result = result.replace(/\*\*/g, '').replace(/\*/g, '');
-    return { text: result.trim() };
+    throw lastError;
 }

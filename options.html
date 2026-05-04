@@ -3,15 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Cấu hình Lời phê</title>
-    <script>
-        // Prevent "Cannot set property fetch of #<Window> which has only a getter" from third-party libraries
-        let origFetch = window.fetch;
-        Object.defineProperty(window, 'fetch', {
-            get: () => origFetch,
-            set: () => {},
-            configurable: true
-        });
-    </script>
     <link rel="stylesheet" href="/src/index.css">
     <style>
         body { margin: 0; font-family: sans-serif; }
@@ -21,8 +12,8 @@
     <!-- Sidebar -->
     <aside class="w-72 bg-slate-900 text-white flex flex-col fixed h-full z-10">
         <div class="p-6 border-b border-slate-800 flex items-center gap-3">
-            <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-white shadow-md shadow-blue-900/50">P</div>
-            <h1 class="text-lg font-bold tracking-tight">Trợ lý Nhận xét Pro</h1>
+            <div class="w-8 h-8 bg-gradient-to-br from-yellow-300 to-yellow-600 rounded-lg flex items-center justify-center font-black text-slate-900 shadow-md shadow-yellow-900/20 text-xs tracking-tighter">PRO</div>
+            <h1 class="text-[17px] font-bold tracking-wide bg-gradient-to-b from-yellow-50 to-yellow-300 bg-clip-text text-transparent">Trợ lý Nhận xét</h1>
         </div>
         <nav class="flex-1 p-4 space-y-1">
             <div class="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Cấu hình hệ thống</div>
@@ -54,7 +45,7 @@
                 <!-- Filters -->
                 <div class="flex flex-wrap gap-4 mb-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                     <div class="flex-1 min-w-[150px]">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Cấp học</label>
+                        <label class="text-[10px] font-bold text-red-500 uppercase tracking-wider mb-1 block">Cấp học</label>
                         <select id="filterCapHoc" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors font-medium">
                             <option value="TH">Tiểu học</option>
                             <option value="THCS" selected>THCS</option>
@@ -62,13 +53,13 @@
                         </select>
                     </div>
                     <div class="flex-1 min-w-[150px]">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Khối lớp</label>
+                        <label class="text-[10px] font-bold text-red-500 uppercase tracking-wider mb-1 block">Khối lớp</label>
                         <select id="filterKhoiLop" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors font-medium">
                             <!-- Dynamic -->
                         </select>
                     </div>
                     <div class="flex-1 min-w-[200px]" id="filterMonHocContainer">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Môn học</label>
+                        <label class="text-[10px] font-bold text-red-500 uppercase tracking-wider mb-1 block">Môn học</label>
                         <select id="filterMonHoc" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors font-medium">
                             <!-- Dynamic -->
                         </select>
@@ -77,15 +68,15 @@
 
                 <!-- Role Tabs -->
                 <div class="flex border-b border-slate-200 gap-8" id="roleTabs">
-                    <button data-role="GVBM" class="tab-btn pb-4 border-b-2 border-blue-600 font-bold text-blue-600 text-sm cursor-pointer tracking-wide uppercase transition-all duration-200">Giáo Viên Bộ Môn</button>
-                    <button data-role="HOC_BA" class="tab-btn pb-4 border-b-2 border-transparent text-slate-400 text-sm hover:text-slate-600 font-bold cursor-pointer tracking-wide uppercase transition-all duration-200">Học bạ (GVCN/Lãnh đạo)</button>
+                    <button data-role="GVBM" class="tab-btn pb-4 border-b-2 border-red-600 font-bold text-red-600 text-sm cursor-pointer tracking-wide uppercase transition-all duration-200">Nhận xét môn học (HK)</button>
+                    <button data-role="HOC_BA" class="tab-btn pb-4 border-b-2 border-transparent text-slate-400 text-sm hover:text-slate-600 font-bold cursor-pointer tracking-wide uppercase transition-all duration-200">Nhận xét cuối năm (Ghi Học bạ)</button>
                 </div>
 
                 <!-- Alert for GVBM -->
                 <div id="gvbmAlert" class="bg-blue-50/80 border border-blue-100 p-5 rounded-xl text-sm text-blue-900 shadow-sm flex gap-3 items-start">
                     <svg class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     <div>
-                        <p class="font-bold">Nhận xét Học bạ (Lãnh đạo/GVCN):</p>
+                        <p class="font-bold">Nhận xét Cuối năm (Ghi Học bạ):</p>
                         <ul class="list-disc ml-5 mt-2 text-blue-800">
                             <li>Bạn có thể nhấn Enter để xuống dòng, hệ thống sẽ tự động tách thành 3 dòng kết quả.</li>
                         </ul>
@@ -127,7 +118,7 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Gemini API Key</label>
-                        <input type="password" id="geminiApiKey" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-shadow" placeholder="AIzaSy..." />
+                        <textarea id="geminiApiKey" rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-shadow" placeholder="AIzaSy...&#10;(Nhiều key cách nhau bằng khoảng trắng, phẩy hoặc xuống dòng)"></textarea>
                         <p class="text-xs text-slate-500 mt-2">Lấy API Key miễn phí tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-600 hover:underline">Google AI Studio</a>.</p>
                     </div>
 

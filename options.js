@@ -121,7 +121,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Save Settings
-    const geminiApiKeyInp = document.getElementById('geminiApiKey');
+    const geminiApiKey1Inp = document.getElementById('geminiApiKey1');
+    const geminiApiKey2Inp = document.getElementById('geminiApiKey2');
+    const geminiApiKey3Inp = document.getElementById('geminiApiKey3');
     const geminiModelIdInp = document.getElementById('geminiModelId');
     const aiPromptTemplateInp = document.getElementById('aiPromptTemplate');
     const saveSettingsBtn = document.getElementById('saveSettingsBtn');
@@ -132,7 +134,11 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.storage.local.get(['geminiApiKey', 'geminiModelId', 'aiPromptTemplate', 'commentsData'], (result) => {
             let currentKey = result.geminiApiKey;
             if (!currentKey || currentKey.trim() === '') currentKey = DEFAULT_KEYS;
-            geminiApiKeyInp.value = currentKey;
+            
+            const keys = currentKey.split(/[\s,]+/).filter(k => k.trim() !== '');
+            if(keys[0]) geminiApiKey1Inp.value = keys[0];
+            if(keys[1]) geminiApiKey2Inp.value = keys[1];
+            if(keys[2]) geminiApiKey3Inp.value = keys[2];
             
             if(result.geminiModelId) geminiModelIdInp.value = result.geminiModelId;
             if(result.aiPromptTemplate) aiPromptTemplateInp.value = result.aiPromptTemplate;
@@ -147,15 +153,19 @@ document.addEventListener('DOMContentLoaded', () => {
             renderData();
         });
     } else {
-        geminiApiKeyInp.value = DEFAULT_KEYS;
         updateDropdowns();
         renderData();
     }
 
     saveSettingsBtn.addEventListener('click', () => {
+        const combinedKeys = [geminiApiKey1Inp.value, geminiApiKey2Inp.value, geminiApiKey3Inp.value]
+            .map(k => k.trim())
+            .filter(k => k !== '')
+            .join(', ');
+
         if(typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
             chrome.storage.local.set({
-                geminiApiKey: geminiApiKeyInp.value,
+                geminiApiKey: combinedKeys,
                 geminiModelId: geminiModelIdInp.value,
                 aiPromptTemplate: aiPromptTemplateInp.value
             }, () => alert("Đã lưu cấu hình AI"));

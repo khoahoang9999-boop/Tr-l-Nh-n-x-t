@@ -116,10 +116,12 @@
                 </div>
 
                 <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-red-600 uppercase tracking-wider mb-2">Gemini API Key</label>
-                        <textarea id="geminiApiKey" rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-shadow" placeholder="AIzaSy...&#10;(Nhiều key cách nhau bằng khoảng trắng, phẩy hoặc xuống dòng)"></textarea>
-                        <p class="text-xs text-slate-500 mt-2">Lấy API Key miễn phí tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-600 hover:underline">Google AI Studio</a>.</p>
+                    <div class="space-y-3">
+                        <label class="block text-xs font-bold text-red-600 uppercase tracking-wider mb-2">3 Gemini API Key (Để dùng cho nhiều học sinh)</label>
+                        <input type="text" id="geminiApiKey1" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-shadow" placeholder="Key 1: AIzaSy... (Bắt buộc)">
+                        <input type="text" id="geminiApiKey2" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-shadow" placeholder="Key 2: AIzaSy... (Khuyên dùng)">
+                        <input type="text" id="geminiApiKey3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-shadow" placeholder="Key 3: AIzaSy... (Khuyên dùng)">
+                        <p class="text-xs text-slate-500 mt-2">Lấy API Key miễn phí tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-600 hover:underline">Google AI Studio</a>. Dùng 3 tài khoản Google khác nhau để tạo 3 key giúp hệ thống ổn định và không bị giới hạn khi chấm nhiều học sinh.</p>
                     </div>
 
                     <div>

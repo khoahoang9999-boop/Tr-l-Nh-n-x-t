@@ -43,6 +43,31 @@ const getEmptySubject = (mon) => {
     };
 };
 
+const generateAllSampleData = () => {
+    currentData = { TH: {}, THCS: {}, THPT: {} };
+    for (const capHoc of Object.keys(GRADE_LEVELS)) {
+        for (const khoi of GRADE_LEVELS[capHoc]) {
+            const h = khoi;
+            currentData[capHoc][h] = { GVBM: {}, HOC_BA: [] };
+            
+            // Add HOC_BA samples
+            currentData[capHoc][h].HOC_BA = [
+                "Năng lực chung: Tự chủ, tự học tốt. Năng lực đặc thù: Vận dụng kiến thức tốt. Phẩm chất: Chăm chỉ, trách nhiệm.",
+                "Năng lực chung: Giao tiếp, hợp tác khá. Năng lực đặc thù: Xử lý tình huống linh hoạt. Phẩm chất: Yêu nước, nhân ái.",
+                "Năng lực chung: Giải quyết vấn đề tốt. Năng lực đặc thù: Tư duy phân tích tốt. Phẩm chất: Trách nhiệm, trung thực.",
+                "Năng lực chung: Tự chủ, giao tiếp khá. Năng lực đặc thù: Thực hành tốt. Phẩm chất: Chăm ngoan, nhân ái.",
+                "Năng lực chung: Tự học khá. Năng lực đặc thù: Cần rèn thêm kỹ năng. Phẩm chất: Có ý thức kỷ luật."
+            ];
+
+            // Add GVBM samples for all subjects
+            const subjects = getSubjects(capHoc, h);
+            for (const mon of subjects) {
+                currentData[capHoc][h].GVBM[mon] = getEmptySubject(mon);
+            }
+        }
+    }
+};
+
 let currentData = { TH: {}, THCS: {}, THPT: {} };
 let currentRole = 'GVBM';
 let currentCapHoc = 'THCS';
@@ -112,9 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if(result.geminiModelId) geminiModelIdInp.value = result.geminiModelId;
             if(result.aiPromptTemplate) aiPromptTemplateInp.value = result.aiPromptTemplate;
             
-            if (result.commentsData && Object.keys(result.commentsData).length > 0) {
+            if (result.commentsData && Object.keys(result.commentsData).length > 0 && result.commentsData.THCS && Object.keys(result.commentsData.THCS).length > 0) {
                 currentData = result.commentsData;
             } else {
+                generateAllSampleData();
                 chrome.storage.local.set({commentsData: currentData});
             }
             updateDropdowns();
@@ -271,29 +297,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 const rows = XLSX.utils.sheet_to_json(worksheet, {header: 1});
                 
                 let successCount = 0;
-                for (let i = 1; i < rows.length; i++) {
-                    const row = rows[i];
-                    if(!row || row.length < 5) continue;
-                    const capHoc = row[0]?.trim();
-                    const khoi = String(row[1])?.trim();
-                    const role = row[2]?.trim();
-                    const monHoc = row[3]?.trim();
-                    const level = row[4]?.trim();
-                    const content = row[5]?.trim();
+                for (const sheetName of workbook.SheetNames) {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(worksheet, {header: 1});
                     
-                    if(!capHoc || !khoi || !role || !content) continue;
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if(!row || row.length < 5) continue;
+                        const capHoc = row[0]?.trim();
+                        const khoi = String(row[1])?.trim();
+                        const role = row[2]?.trim();
+                        const monHoc = row[3]?.trim();
+                        const level = row[4]?.trim();
+                        const content = row[5]?.trim();
+                        
+                        if(!capHoc || !khoi || !role || !content) continue;
 
-                    if(!currentData[capHoc]) currentData[capHoc] = {};
-                    if(!currentData[capHoc][khoi]) currentData[capHoc][khoi] = {GVBM: {}, HOC_BA: []};
-                    
-                    if (role === 'GVBM' && monHoc && level) {
-                        if(!currentData[capHoc][khoi].GVBM[monHoc]) currentData[capHoc][khoi].GVBM[monHoc] = getEmptySubject(monHoc);
-                        if(!currentData[capHoc][khoi].GVBM[monHoc][level]) currentData[capHoc][khoi].GVBM[monHoc][level] = [];
-                        currentData[capHoc][khoi].GVBM[monHoc][level].push(content);
-                        successCount++;
-                    } else if (role === 'HOC_BA') {
-                        currentData[capHoc][khoi].HOC_BA.push(content);
-                        successCount++;
+                        if(!currentData[capHoc]) currentData[capHoc] = {};
+                        if(!currentData[capHoc][khoi]) currentData[capHoc][khoi] = {GVBM: {}, HOC_BA: []};
+                        
+                        if (role === 'GVBM' && monHoc && level) {
+                            if(!currentData[capHoc][khoi].GVBM[monHoc]) currentData[capHoc][khoi].GVBM[monHoc] = getEmptySubject(monHoc);
+                            if(!currentData[capHoc][khoi].GVBM[monHoc][level]) currentData[capHoc][khoi].GVBM[monHoc][level] = [];
+                            currentData[capHoc][khoi].GVBM[monHoc][level].push(content);
+                            successCount++;
+                        } else if (role === 'HOC_BA') {
+                            currentData[capHoc][khoi].HOC_BA.push(content);
+                            successCount++;
+                        }
                     }
                 }
                 saveToStorage();
@@ -310,27 +341,45 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('downloadTemplateBtn').addEventListener('click', () => {
         const wb = XLSX.utils.book_new();
         
-        const ws_data = [
-            ["Cấp Học", "Khối Lớp", "Vai Trò", "Môn Học", "Mức Độ", "Nội Dung"],
-            ["THCS", "6", "GVBM", "Ngữ văn", "Giỏi", "Em học xuất sắc bộ môn Ngữ văn."],
-            ["THCS", "6", "GVBM", "Ngữ văn", "Khá", "Em học tốt bộ môn Ngữ văn, cần phát huy."],
-            ["THCS", "6", "HOC_BA", "", "", "Học sinh ngoan, lễ phép.\\nHoàn thành tốt nhiệm vụ học tập.\\nTích cực tham gia các phong trào."],
-            ["THPT", "10", "GVBM", "Toán", "Đạt", "Em có cố gắng, cần làm bài tập nhiều hơn."],
-        ];
+        const header = ["Cấp Học", "Khối Lớp", "Vai Trò", "Môn Học", "Mức Độ", "Nội Dung"];
         
-        const ws = XLSX.utils.aoa_to_sheet(ws_data);
-        
-        // Auto size columns roughly
-        ws['!cols'] = [
-            { wch: 10 },
-            { wch: 10 },
-            { wch: 12 },
-            { wch: 15 },
-            { wch: 10 },
-            { wch: 60 }
-        ];
+        const ws_th = XLSX.utils.aoa_to_sheet([
+            header,
+            ["TH", "1", "GVBM", "Toán", "Giỏi", "Em hiểu bài nhanh, làm tính tốt."],
+            ["TH", "1", "GVBM", "Toán", "Khá", "Em nắm được bài, cần cẩn thận hơn."]
+        ]);
 
-        XLSX.utils.book_append_sheet(wb, ws, "MauNhanXet");
+        const ws_thcs = XLSX.utils.aoa_to_sheet([
+            header,
+            ["THCS", "6", "GVBM", "Ngữ văn", "Giỏi", "Em hiểu bài nhanh, vận dụng kiến thức nhạy bén trong môn Ngữ văn."],
+            ["THCS", "6", "GVBM", "Ngữ văn", "Khá", "Em học tốt bộ môn Ngữ văn, cần phát huy."]
+        ]);
+
+        const ws_thpt = XLSX.utils.aoa_to_sheet([
+            header,
+            ["THPT", "10", "GVBM", "Toán", "Đạt", "Em có cố gắng, cần làm bài tập nhiều hơn."],
+            ["THPT", "10", "GVBM", "Toán", "Cần cố gắng", "Chú ý nghe giảng và ôn bài cũ."]
+        ]);
+
+        const ws_hoc_ba = XLSX.utils.aoa_to_sheet([
+            header,
+            ["THCS", "6", "HOC_BA", "", "", "Năng lực chung: Tự chủ, tự học tốt\nNăng lực đặc thù: Vận dụng kiến thức tốt\nPhẩm chất: Chăm chỉ, trách nhiệm"],
+            ["THCS", "6", "HOC_BA", "", "", "Năng lực chung: Giao tiếp, hợp tác khá\nNăng lực đặc thù: Xử lý tình huống linh hoạt\nPhẩm chất: Yêu nước, nhân ái"],
+            ["THCS", "6", "HOC_BA", "", "", "Năng lực chung: Giải quyết vấn đề tốt\nNăng lực đặc thù: Tư duy phân tích tốt\nPhẩm chất: Trách nhiệm, trung thực"],
+            ["THPT", "10", "HOC_BA", "", "", "Hoàn thành tốt nhiệm vụ học tập, có ý thức kỷ luật tốt."]
+        ]);
+        
+        const cols = [{wch: 10}, {wch: 10}, {wch: 12}, {wch: 15}, {wch: 10}, {wch: 60}];
+        ws_th['!cols'] = cols;
+        ws_thcs['!cols'] = cols;
+        ws_thpt['!cols'] = cols;
+        ws_hoc_ba['!cols'] = cols;
+
+        XLSX.utils.book_append_sheet(wb, ws_th, "TH");
+        XLSX.utils.book_append_sheet(wb, ws_thcs, "THCS");
+        XLSX.utils.book_append_sheet(wb, ws_thpt, "THPT");
+        XLSX.utils.book_append_sheet(wb, ws_hoc_ba, "HOC_BA");
+        
         XLSX.writeFile(wb, "MauNhanXet_TroLyAI.xlsx");
     });
 });

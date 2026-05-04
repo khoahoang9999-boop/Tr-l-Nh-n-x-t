@@ -65,12 +65,16 @@ export default function App() {
             <div className="p-6 space-y-4 text-sm text-slate-600 leading-relaxed">
               <p>Tiện ích này yêu cầu Build để có thể chạy trên Chrome.</p>
               <ul className="list-decimal pl-5 space-y-2 font-medium text-slate-700">
-                <li>Nhấn vào biểu tượng <strong>Cài đặt (hình bánh răng ⚙️)</strong> ở góc trên cùng bên phải, chuyển sang tab <strong>"GitHub"</strong> để đồng bộ mã nguồn lên tài khoản GitHub của bạn. Sau đó vào GitHub tải mã nguồn (Download ZIP) về máy tính.</li>
-                <li>Giải nén thư mục.</li>
-                <li>Mở terminal tại thư mục vừa giải nén, chạy lệnh <code className="bg-slate-100 px-1.5 py-0.5 rounded text-blue-600">npm install</code></li>
+                <li>Nhấn vào biểu tượng <strong>Cài đặt (hình bánh răng ⚙️)</strong> ở góc trên cùng bên phải.</li>
+                <li>Chuyển sang tab <strong>GitHub</strong>. <em>(Nếu hệ thống yêu cầu "Sign in to GitHub", hãy nhấn vào đó, đăng nhập và chọn "Accept new permissions". Sau khi xong, hãy quay lại thẻ này)</em>.</li>
+                <li>Lúc này trong tab GitHub, bạn sẽ thấy một đường link màu xanh (ví dụ: <a href="https://github.com/khoahoang9999-boop/Tr-I-Nh-n-x-t" target="_blank" className="text-blue-600 hover:underline">khoahoang9999-boop/Tr-I-Nh-n-x-t</a>). Hãy nhấn vào đường link màu xanh đó.</li>
+                <li><strong>Lưu ý:</strong> Nền tảng sẽ tự động đồng bộ mã nguồn lên GitHub sau mỗi lần AI hoàn tất gõ code. Nếu xem trên GitHub chưa thấy code mới, hãy đợi 1 phút và tải lại trang (F5).</li>
+                <li>Trang GitHub mã nguồn sẽ mở ra, nhấn vào nút màu xanh lá cây <strong>&lt;&gt; Code</strong> và chọn <strong>Download ZIP</strong> để tải file về máy.</li>
+                <li>Giải nén file ZIP vừa tải về.</li>
+                <li>Mở terminal (hoặc Command Prompt) tại thư mục vừa giải nén, chạy lệnh <code className="bg-slate-100 px-1.5 py-0.5 rounded text-blue-600">npm install</code></li>
                 <li>Sau đó chạy lệnh <code className="bg-slate-100 px-1.5 py-0.5 rounded text-blue-600">npm run build</code></li>
-                <li>Vào Chrome, bật mục <strong>Developer mode</strong> tại trang <code>chrome://extensions/</code></li>
-                <li>Nhấn <strong>Load unpacked</strong> và chọn thư mục <code className="bg-slate-100 px-1.5 py-0.5 rounded text-blue-600">dist</code>.</li>
+                <li>Mở trình duyệt Chrome, gõ vào thanh địa chỉ: <code>chrome://extensions/</code> và bật <strong>Developer mode (Chế độ dành cho nhà phát triển)</strong> ở góc phải.</li>
+                <li>Nhấn vào nút <strong>Load unpacked (Tải tiện ích đã giải nén)</strong> và chọn thư mục <code className="bg-slate-100 px-1.5 py-0.5 rounded text-blue-600">dist</code> nằm bên trong thư mục mã nguồn.</li>
               </ul>
             </div>
             <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">

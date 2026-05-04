@@ -33,7 +33,7 @@
         <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-10">
             <div class="flex items-center gap-2">
                 <span class="text-sm text-slate-500 font-medium italic">Dashboard /</span>
-                <span class="text-sm font-semibold text-slate-800">Quản lý Lời phê Mẫu</span>
+                <span class="text-sm font-semibold text-red-600">Quản lý Lời phê Mẫu</span>
             </div>
             <div class="flex items-center gap-4">
                 <button id="addBtn" class="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-md shadow drop-shadow-sm cursor-pointer hover:bg-blue-700 transition-colors">+ Thêm Lời Phê</button>
@@ -103,7 +103,7 @@
                             </div>
                         </div>
                     </div>
-                    <button id="importCsvBtn" class="px-8 py-3 bg-blue-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-200/50 cursor-pointer hover:bg-blue-700 hover:shadow-blue-300 transition-all uppercase tracking-wider">Tiến Hành Tải Lên</button>
+                    <button id="importCsvBtn" class="px-8 py-3 bg-blue-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-200/50 cursor-pointer hover:bg-blue-700 hover:shadow-blue-300 transition-all uppercase tracking-wider">Tải lên</button>
                 </div>
             </div>
         </div>
@@ -111,19 +111,19 @@
         <div id="viewSettings" class="p-8 flex flex-col gap-8 max-w-3xl hidden">
             <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-8">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-800 mb-2">Cấu hình Trợ lý AI (Gemini)</h2>
+                    <h2 class="text-lg font-bold text-red-600 mb-2">Cấu hình Trợ lý AI (Gemini)</h2>
                     <p class="text-sm text-slate-500">Cấu hình API Key để kích hoạt nhận xét tự động. API Key sẽ được lưu an toàn tại bộ nhớ trình duyệt.</p>
                 </div>
 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Gemini API Key</label>
+                        <label class="block text-xs font-bold text-red-600 uppercase tracking-wider mb-2">Gemini API Key</label>
                         <textarea id="geminiApiKey" rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-shadow" placeholder="AIzaSy...&#10;(Nhiều key cách nhau bằng khoảng trắng, phẩy hoặc xuống dòng)"></textarea>
                         <p class="text-xs text-slate-500 mt-2">Lấy API Key miễn phí tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-600 hover:underline">Google AI Studio</a>.</p>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Mô hình AI</label>
+                        <label class="block text-xs font-bold text-red-600 uppercase tracking-wider mb-2">Mô hình AI</label>
                         <select id="geminiModelId" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-shadow">
                             <option value="gemini-3.1-flash-preview">Gemini 3.1 Flash Preview</option>
                             <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
@@ -133,7 +133,7 @@
                     </div>
                     
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Prompt Mẫu cho AI (Tùy chọn biến {diem}, {mon}, {ten})</label>
+                        <label class="block text-xs font-bold text-red-600 uppercase tracking-wider mb-2">Prompt Mẫu cho AI (Tùy chọn biến {diem}, {mon}, {ten})</label>
                         <textarea id="aiPromptTemplate" rows="5" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 transition-shadow font-mono text-[13px] text-slate-600">Bạn là một giáo viên chuyên nghiệp. Nhận xét ngắn gọn, nhân văn, động viên học sinh đạt {diem} điểm môn {mon}. Không quá 12 từ.</textarea>
                     </div>
                 </div>

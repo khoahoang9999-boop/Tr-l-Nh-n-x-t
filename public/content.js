@@ -16,10 +16,10 @@ async function fillCommentsAsync(config) {
     const storageResult = await chrome.storage.local.get(['commentsData', 'geminiApiKey', 'geminiModelId', 'aiPromptTemplate']);
     const db = storageResult.commentsData;
 
-    if (method === 'template' && !db) {
-        throw new Error("Chưa khởi tạo dữ liệu Mẫu! Vui lòng mở Cấu hình Lời phê trước.");
+    if (method === 'template' && (!db || !db.THCS || Object.keys(db.THCS).length === 0)) {
+        throw new Error("Chưa khởi tạo dữ liệu Mẫu! Vui lòng bấm vào icon răng cưa trên góc phải để mở trang Cấu hình Lời phê, hệ thống sẽ tự động tạo đủ mẫu cho bạn.");
     }
-    const DEFAULT_KEYS = "AIzaSyBZ7HYd1I4jfOZQXjFuL4w1eYC_a-7DhZE, AIzaSyC8yFEfZdR9BwF_e5NbCUYFgW2RZB8wBuI, AIzaSyAz7tBBhmWQ8nzRDPLU9lK6IkOV0AZIKDg";
+    const DEFAULT_KEYS = "";
     let resolvedApiKey = storageResult.geminiApiKey;
     if (!resolvedApiKey || resolvedApiKey.trim() === '') resolvedApiKey = DEFAULT_KEYS;
 
@@ -147,15 +147,18 @@ async function fillCommentsAsync(config) {
                 if (el.tagName.toLowerCase() === 'textarea') return false;
                 const attrStr = (el.id + " " + (el.name || "") + " " + (el.className || "")).toLowerCase();
                 if (attrStr.includes('manx') || attrStr.includes('ma_nx') || attrStr.includes('macmt')) return true;
-                if (el.maxLength && el.maxLength > 0 && el.maxLength < 20) return true;
+                if (el.maxLength && el.maxLength > 0 && el.maxLength < 50) return true;
                 if (el.style && el.style.width) {
                     const w = parseInt(el.style.width);
-                    if (w > 0 && w < 60) return true;
+                    if (w > 0 && w < 100) return true;
                 }
+                const rect = el.getBoundingClientRect();
+                if (rect.width > 0 && rect.width < 100) return true;
                 return false;
             };
 
-            const contentInputs = textInputs.filter(el => !isCodeInput(el));
+            const textAreas = textInputs.filter(el => el.tagName.toLowerCase() === 'textarea');
+            const contentInputs = textAreas.length > 0 ? textAreas : textInputs.filter(el => !isCodeInput(el));
             
             if (contentInputs.length > 0) {
                 if (role === 'HOC_BA') {
@@ -166,74 +169,72 @@ async function fillCommentsAsync(config) {
                     commentInput = contentInputs[0];
                 }
             } else {
-                // Fallback: If no content inputs found by our filter (for example, the input is tiny and has no name), stick to the original plan
+                // Fallback: If no content inputs found by our filter
                 commentInput = textInputs[role === 'HOC_BA' ? textInputs.length - 1 : 0];
             }
                 
             if (!commentInput) continue;
 
-            if (role === 'GVBM' || method === 'ai') {
-                // Find the closest ancestor TD to look backwards from
-                const commentTd = commentInput.closest('td, div.x-grid-cell, div.x-grid3-cell');
-                let foundScore = null;
+            // Find the closest ancestor TD to look backwards from
+            const commentTd = commentInput.closest('td, div.x-grid-cell, div.x-grid3-cell');
+            let foundScore = null;
 
-                if (commentTd && commentTd.parentElement) {
-                    const allCells = Array.from(commentTd.parentElement.querySelectorAll('td, div.x-grid-cell, div.x-grid3-cell'));
-                    const commentIndex = allCells.indexOf(commentTd);
-                    
-                    if (commentIndex !== -1) {
-                        for (let i = commentIndex - 1; i >= 0; i--) {
-                            const cell = allCells[i];
-                            const text = cell.innerText.trim();
-                            // If there are inputs that might have the score inside
-                            const possibleInputs = Array.from(cell.querySelectorAll('input[type="text"], span, div.x-grid-cell-inner'));
-                            let valsToTry = [text];
-                            possibleInputs.forEach(el => {
-                                valsToTry.push((el.value || el.innerText || "").trim());
-                            });
+            if (commentTd && commentTd.parentElement) {
+                const allCells = Array.from(commentTd.parentElement.querySelectorAll('td, div.x-grid-cell, div.x-grid3-cell'));
+                const commentIndex = allCells.indexOf(commentTd);
+                
+                if (commentIndex !== -1) {
+                    for (let i = commentIndex - 1; i >= 0; i--) {
+                        const cell = allCells[i];
+                        const text = cell.innerText.trim();
+                        // If there are inputs that might have the score inside
+                        const possibleInputs = Array.from(cell.querySelectorAll('input[type="text"], span, div.x-grid-cell-inner'));
+                        let valsToTry = [text];
+                        possibleInputs.forEach(el => {
+                            valsToTry.push((el.value || el.innerText || "").trim());
+                        });
 
-                            for (let val of valsToTry) {
-                                if (val) {
-                                    const cleaned = val.replace(',', '.').trim();
-                                    // Match exact floats
-                                    if (/^\d{1,2}(\.\d+)?$/.test(cleaned)) {
-                                        const parsed = parseFloat(cleaned);
-                                        if (!isNaN(parsed) && parsed >= 0 && parsed <= 10) {
-                                            foundScore = parsed;
-                                            break;
-                                        }
+                        for (let val of valsToTry) {
+                            if (val) {
+                                const cleaned = val.replace(',', '.').trim();
+                                // Match exact floats
+                                if (/^\d{1,2}(\.\d+)?$/.test(cleaned)) {
+                                    const parsed = parseFloat(cleaned);
+                                    if (!isNaN(parsed) && parsed >= 0 && parsed <= 10) {
+                                        foundScore = parsed;
+                                        break;
                                     }
                                 }
                             }
-                            if (foundScore !== null) break;
                         }
+                        if (foundScore !== null) break;
                     }
                 }
-                
-                // Fallback to the old logic if we didn't find anything backwards
-                if (foundScore !== null) {
-                    averageScore = foundScore;
-                } else {
-                    const targetCells = Array.from(row.querySelectorAll('td, div.x-grid-cell, div.x-grid3-cell')).slice(1);
-                    const numberValues = Array.from(targetCells).flatMap(cell => {
-                        const els = Array.from(cell.querySelectorAll('input[type="text"], span, div.x-grid-cell-inner'));
-                        return [cell.innerText, ...els.map(e => e.value || e.innerText)];
-                    })
-                    .map(val => {
-                        if (typeof val === 'string') {
-                            val = val.replace(',', '.').trim();
-                            // Specific check to avoid matching dates or strings as numbers roughly
-                            if (/^\d{1,2}(\.\d+)?$/.test(val)) {
-                                return parseFloat(val);
-                            }
+            }
+            
+            // Fallback to the old logic if we didn't find anything backwards
+            if (foundScore !== null) {
+                averageScore = foundScore;
+            } else {
+                const targetCells = Array.from(row.querySelectorAll('td, div.x-grid-cell, div.x-grid3-cell')).slice(1);
+                const numberValues = Array.from(targetCells).flatMap(cell => {
+                    const els = Array.from(cell.querySelectorAll('input[type="text"], span, div.x-grid-cell-inner'));
+                    return [cell.innerText, ...els.map(e => e.value || e.innerText)];
+                })
+                .map(val => {
+                    if (typeof val === 'string') {
+                        val = val.replace(',', '.').trim();
+                        // Specific check to avoid matching dates or strings as numbers roughly
+                        if (/^\d{1,2}(\.\d+)?$/.test(val)) {
+                            return parseFloat(val);
                         }
-                        return NaN;
-                    })
-                    .filter(num => !isNaN(num) && num <= 10 && num >= 0);
-                    
-                    if (numberValues.length > 0) {
-                        averageScore = numberValues[numberValues.length - 1];
                     }
+                    return NaN;
+                })
+                .filter(num => !isNaN(num) && num <= 10 && num >= 0);
+                
+                if (numberValues.length > 0) {
+                    averageScore = numberValues[numberValues.length - 1];
                 }
             }
 

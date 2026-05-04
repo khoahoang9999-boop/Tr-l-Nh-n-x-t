@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     optionsBtn.addEventListener('click', openOptions);
     settingsBtn.addEventListener('click', openOptions);
 
-    const DEFAULT_KEYS = "AIzaSyBZ7HYd1I4jfOZQXjFuL4w1eYC_a-7DhZE, AIzaSyC8yFEfZdR9BwF_e5NbCUYFgW2RZB8wBuI, AIzaSyAz7tBBhmWQ8nzRDPLU9lK6IkOV0AZIKDg";
+    const DEFAULT_KEYS = "";
 
     const setStatus = (msg, type) => {
         const text = document.getElementById('statusText');
@@ -120,9 +120,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                 setStatus(`Đã điền thành công ${response.count} dòng!`, "success");
                             } else {
                                 setStatus("Không tìm thấy ô nhận xét phù hợp!", "error");
+                                alert("Không tìm thấy ô nhận xét phù hợp trên trang. Hãy chắc chắn bạn đã kích hoạt tính năng Nhập nhận xét.");
                             }
                         } else {
-                            setStatus(response?.error || 'Lỗi không xác định', "error");
+                            const errDesc = response?.error || 'Lỗi không xác định';
+                            setStatus('Mã lỗi: Xem thông báo', "error");
+                            alert(errDesc.replace('Error: ', ''));
+                            if (errDesc.includes("Chưa khởi tạo dữ liệu Mẫu")) {
+                                openOptions();
+                            }
                         }
                     });
                 } else {

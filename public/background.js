@@ -25,7 +25,8 @@ async function handleAIGenerate({ apiKey, promptTemplate, diem, mon, ten, role }
         promptText += " Đối với nhận xét học bạ, vui lòng tách riêng 3 mặt: Phẩm chất; Năng lực; Hoạt động ngoại khóa. Sử dụng dấu xuống dòng (\\n) hoặc ngắt dòng rõ ràng cho từng mặt.";
     }
 
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+    const modelId = request.payload?.modelId || "gemini-1.5-flash";
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

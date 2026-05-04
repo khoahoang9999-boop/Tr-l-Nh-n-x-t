@@ -13,7 +13,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function fillCommentsAsync(config) {
     const { platform, role, subject, capHoc = 'THCS', khoiLop = '6', method } = config;
 
-    const storageResult = await chrome.storage.local.get(['commentsData', 'geminiApiKey', 'aiPromptTemplate']);
+    const storageResult = await chrome.storage.local.get(['commentsData', 'geminiApiKey', 'geminiModelId', 'aiPromptTemplate']);
     const db = storageResult.commentsData;
 
     if (method === 'template' && !db) {
@@ -97,7 +97,12 @@ async function fillCommentsAsync(config) {
                 }
             }
 
-            const commentInput = row.querySelector('input.nhan-xet, textarea, input[type="text"]:not([readonly])');
+            const textInputs = Array.from(row.querySelectorAll('textarea, input[type="text"]:not([readonly]), input.nhan-xet'));
+            // Prefer textarea, or input with nhan-xet class/placeholder, or just the last input in the row
+            const commentInput = textInputs.find(el => el.tagName.toLowerCase() === 'textarea') 
+                || textInputs.find(el => el.className.toLowerCase().includes('nhan-xet') || el.placeholder.toLowerCase().includes('nhận xét'))
+                || textInputs[textInputs.length - 1];
+                
             if (!commentInput) continue;
 
             let chosenComment = "";
@@ -119,8 +124,6 @@ async function fillCommentsAsync(config) {
                     }
                 }
             } else if (method === 'ai') {
-                // Call Background script to generate comment
-                if (averageScore === null && role === 'GVBM') continue; 
                 // We show loading state on the input
                 const oldPhm = commentInput.placeholder;
                 commentInput.placeholder = "AI đang soạn...";
@@ -130,6 +133,7 @@ async function fillCommentsAsync(config) {
                             action: "generateAIComment",
                             payload: {
                                 apiKey: storageResult.geminiApiKey,
+                                modelId: storageResult.geminiModelId,
                                 promptTemplate: storageResult.aiPromptTemplate,
                                 diem: averageScore !== null ? averageScore : (level + " (Đánh giá chung)"),
                                 mon: subject || "Chung",

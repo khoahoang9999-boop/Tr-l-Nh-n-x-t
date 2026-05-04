@@ -75,12 +75,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Save Settings
     const geminiApiKeyInp = document.getElementById('geminiApiKey');
+    const geminiModelIdInp = document.getElementById('geminiModelId');
     const aiPromptTemplateInp = document.getElementById('aiPromptTemplate');
     const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 
     if(chrome && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.get(['geminiApiKey', 'aiPromptTemplate', 'commentsData'], (result) => {
+        chrome.storage.local.get(['geminiApiKey', 'geminiModelId', 'aiPromptTemplate', 'commentsData'], (result) => {
             if(result.geminiApiKey) geminiApiKeyInp.value = result.geminiApiKey;
+            if(result.geminiModelId) geminiModelIdInp.value = result.geminiModelId;
             if(result.aiPromptTemplate) aiPromptTemplateInp.value = result.aiPromptTemplate;
             
             if (result.commentsData && Object.keys(result.commentsData).length > 0) {
@@ -99,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveSettingsBtn.addEventListener('click', () => {
         chrome.storage.local.set({
             geminiApiKey: geminiApiKeyInp.value,
+            geminiModelId: geminiModelIdInp.value,
             aiPromptTemplate: aiPromptTemplateInp.value
         }, () => alert("Đã lưu cấu hình AI"));
     });

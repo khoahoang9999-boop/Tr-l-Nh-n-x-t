@@ -31,9 +31,9 @@ async function fillCommentsAsync(config) {
             }
         } else if (roleConfig === 'HOC_BA') {
             formatted = formatted.replace(/\\n/g, '\n');
-            const lines = formatted.split('\n');
+            const lines = formatted.split('\n').filter(l => l.trim() !== '');
             if (lines.length > 0 && !lines[0].startsWith("-")) {
-                formatted = lines.map(l => l.trim() ? `- ${l.trim()}` : '').join('\n');
+                formatted = lines.map(l => `- ${l.trim()}`).join('\n');
             }
         }
         return formatted;
@@ -44,10 +44,11 @@ async function fillCommentsAsync(config) {
     let rows = [];
     switch(platform) {
         case 'csdl':
-            rows = document.querySelectorAll('tr'); // Broaden search because CSDL might use multiple tables or div-based rows
+            rows = document.querySelectorAll('tr.rgRow, tr.rgAltRow');
+            if (rows.length === 0) rows = document.querySelectorAll('tr'); 
             break;
         case 'vnedu':
-            rows = document.querySelectorAll('.x-grid-row, tr');
+            rows = document.querySelectorAll('.x-grid-row, .x-grid3-row, tr');
             break;
         default:
             rows = document.querySelectorAll('tr');
@@ -73,18 +74,27 @@ async function fillCommentsAsync(config) {
     // Process rows sequentially to avoid API rate limiting issues if AI is used
     for (const row of Array.from(rows)) {
         try {
+            // Must have enough cells to be a valid data row (avoid headers/navbars)
+            const cells = row.querySelectorAll('td, div.x-grid-cell, div.x-grid3-cell');
+            if (cells.length > 0 && cells.length < 3) continue;
+
             let averageScore = null;
             let tenHS = "Em";
 
             // Attempt to find student name (usually in the second or third column)
-            const textCells = Array.from(row.querySelectorAll('td, span')).map(el => el.innerText.trim());
-            const possibleNames = textCells.filter(t => t.length > 5 && t.length < 30 && !t.match(/\d/));
+            const textCells = Array.from(row.querySelectorAll('td, span, div.x-grid-cell-inner')).map(el => el.innerText.trim());
+            
+            // Skip rows that look like purely headers (e.g. containing 'STT', 'Họ tên')
+            const isHeader = textCells.some(t => t.toLowerCase() === 'họ tên' || t.toLowerCase() === 'stt');
+            if (isHeader) continue;
+
+            const possibleNames = textCells.filter(t => t.length >= 5 && t.length < 35 && !t.match(/\d/));
             if (possibleNames.length > 0) {
                 tenHS = possibleNames[0].split(' ').pop(); // Just take the first name roughly
             }
 
             if (role === 'GVBM' || method === 'ai') {
-                const numberValues = Array.from(row.querySelectorAll('input[type="text"], span, td'))
+                const numberValues = Array.from(row.querySelectorAll('input[type="text"], span, td, div.x-grid-cell-inner'))
                                       .map(el => {
                                           let val = el.value || el.innerText;
                                           if (typeof val === 'string') val = val.replace(',', '.').trim();
@@ -98,6 +108,7 @@ async function fillCommentsAsync(config) {
             }
 
             const textInputs = Array.from(row.querySelectorAll('textarea:not([disabled]):not([readonly]), input[type="text"]:not([readonly]):not([disabled]), input.nhan-xet'));
+            if (textInputs.length === 0) continue;
             
             let commentInput = null;
             const textareas = textInputs.filter(el => el.tagName.toLowerCase() === 'textarea');
@@ -164,10 +175,13 @@ async function fillCommentsAsync(config) {
             }
 
             if (chosenComment) {
+                commentInput.focus();
                 commentInput.value = formatComment(chosenComment, role);
                 commentInput.dispatchEvent(new Event('input', { bubbles: true }));
                 commentInput.dispatchEvent(new Event('change', { bubbles: true }));
-                commentInput.dispatchEvent(new Event('blur', { bubbles: true }));
+                commentInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+                commentInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+                commentInput.blur();
                 fillCount++;
             }
         } catch (err) {

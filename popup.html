@@ -71,6 +71,12 @@
                 <span class="bg-indigo-100 text-indigo-700 px-1 py-0.5 rounded text-xs font-bold leading-none">AI</span>
             </label>
         </div>
+        <div id="aiSettings" class="hidden flex-col gap-2 pt-2 border-t border-slate-100 bg-indigo-50/50 p-2 rounded -mx-1">
+            <label class="text-[10px] font-bold text-indigo-400 uppercase">Gemini API Key</label>
+            <input type="password" id="geminiApiKeyPopup" class="w-full p-2 text-sm bg-white border border-indigo-100 rounded outline-none focus:border-indigo-400 transition-colors" placeholder="AIzaSy...">
+            <button id="saveApiKeyBtn" class="text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm py-1.5 rounded cursor-pointer transition-colors w-full">Lưu API Key</button>
+            <div class="text-[10px] text-center text-slate-500 mt-1">Lấy key tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-500 hover:underline">Google AI Studio</a>.</div>
+        </div>
         <div class="pt-2">
             <button id="runBtn" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded shadow-md shadow-blue-100 hover:bg-blue-700 transition-colors cursor-pointer">Chạy Tự Động Điền</button>
         </div>

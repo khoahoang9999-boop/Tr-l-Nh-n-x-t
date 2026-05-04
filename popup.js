@@ -38,14 +38,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateKhoiLop();
 
-    const openOptions = (tab = null) => {
+    const openOptions = (tabParam = null) => {
         let url = chrome.runtime.getURL('options.html');
-        if (tab) url += `?tab=${tab}`;
+        if (typeof tabParam === 'string') url += `?tab=${tabParam}`;
         window.open(url);
     };
     
     optionsBtn.addEventListener('click', openOptions);
     settingsBtn.addEventListener('click', openOptions);
+
+    const aiSettings = document.getElementById('aiSettings');
+    const methodRadios = document.querySelectorAll('input[name="method"]');
+    const geminiApiKeyPopup = document.getElementById('geminiApiKeyPopup');
+    const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+
+    methodRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.value === 'ai') {
+                aiSettings.classList.remove('hidden');
+                aiSettings.classList.add('flex');
+                chrome.storage.local.get(['geminiApiKey'], (res) => {
+                    if (res.geminiApiKey) geminiApiKeyPopup.value = res.geminiApiKey;
+                });
+            } else {
+                aiSettings.classList.add('hidden');
+                aiSettings.classList.remove('flex');
+            }
+        });
+    });
+
+    saveApiKeyBtn.addEventListener('click', () => {
+        const key = geminiApiKeyPopup.value.trim();
+        if(!key) return alert("Vui lòng nhập API Key!");
+        chrome.storage.local.set({
+            geminiApiKey: key
+        }, () => {
+            setStatus("Đã lưu API Key!", "success");
+            setTimeout(() => setStatus("Sẵn sàng tự động điền.", "info"), 2000);
+        });
+    });
 
     const setStatus = (msg, type) => {
         const text = document.getElementById('statusText');
@@ -78,8 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (method === 'ai') {
             chrome.storage.local.get(['geminiApiKey'], (res) => {
                 if (!res.geminiApiKey) {
-                    setStatus("Chưa cấu hình AI...", "error");
-                    setTimeout(() => openOptions('ai'), 1500);
+                    setStatus("Vui lòng Cấu hình Trợ lý AI (Cài đặt)!", "error");
                     return;
                 }
                 executeLogic({ platform, role, capHoc, khoiLop, subject, method });

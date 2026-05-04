@@ -38,12 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateKhoiLop();
 
-    const openOptions = () => {
-        if (chrome.runtime.openOptionsPage) {
-            chrome.runtime.openOptionsPage();
-        } else {
-            window.open(chrome.runtime.getURL('options.html'));
-        }
+    const openOptions = (tab = null) => {
+        let url = chrome.runtime.getURL('options.html');
+        if (tab) url += `?tab=${tab}`;
+        window.open(url);
     };
     
     optionsBtn.addEventListener('click', openOptions);
@@ -81,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chrome.storage.local.get(['geminiApiKey'], (res) => {
                 if (!res.geminiApiKey) {
                     setStatus("Chưa cấu hình AI...", "error");
-                    setTimeout(() => openOptions(), 1500);
+                    setTimeout(() => openOptions('ai'), 1500);
                     return;
                 }
                 executeLogic({ platform, role, capHoc, khoiLop, subject, method });
@@ -102,7 +100,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (chrome.runtime.lastError) {
                         setStatus("Lỗi kết nối. Hãy tải lại trang web!", "error");
                     } else if (response && response.success) {
-                        setStatus("Đã chạy tự động điền thành công!", "success");
+                        if (response.count > 0) {
+                            setStatus(`Đã điền thành công ${response.count} dòng!`, "success");
+                        } else {
+                            setStatus("Không tìm thấy ô nhận xét phù hợp!", "error");
+                        }
                     } else {
                         setStatus(response?.error || 'Lỗi không xác định', "error");
                     }

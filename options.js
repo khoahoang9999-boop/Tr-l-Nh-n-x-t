@@ -53,25 +53,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewSettings = document.getElementById('viewSettings');
 
     // Navigation
+    const switchToTab = (tabId) => {
+        if (tabId === 'ai') {
+            navSettings.classList.replace('hover:bg-slate-800', 'bg-blue-600');
+            navSettings.classList.replace('text-slate-300', 'text-white');
+            navTemplates.classList.replace('bg-blue-600', 'hover:bg-slate-800');
+            navTemplates.classList.replace('text-white', 'text-slate-300');
+            viewTemplates.classList.add('hidden');
+            viewSettings.classList.remove('hidden');
+        } else {
+            navTemplates.classList.replace('hover:bg-slate-800', 'bg-blue-600');
+            navTemplates.classList.replace('text-slate-300', 'text-white');
+            navSettings.classList.replace('bg-blue-600', 'hover:bg-slate-800');
+            navSettings.classList.replace('text-white', 'text-slate-300');
+            viewTemplates.classList.remove('hidden');
+            viewSettings.classList.add('hidden');
+        }
+    };
+
     navTemplates.addEventListener('click', (e) => {
         e.preventDefault();
-        navTemplates.classList.replace('hover:bg-slate-800', 'bg-blue-600');
-        navTemplates.classList.replace('text-slate-300', 'text-white');
-        navSettings.classList.replace('bg-blue-600', 'hover:bg-slate-800');
-        navSettings.classList.replace('text-white', 'text-slate-300');
-        viewTemplates.classList.remove('hidden');
-        viewSettings.classList.add('hidden');
+        switchToTab('templates');
     });
 
     navSettings.addEventListener('click', (e) => {
         e.preventDefault();
-        navSettings.classList.replace('hover:bg-slate-800', 'bg-blue-600');
-        navSettings.classList.replace('text-slate-300', 'text-white');
-        navTemplates.classList.replace('bg-blue-600', 'hover:bg-slate-800');
-        navTemplates.classList.replace('text-white', 'text-slate-300');
-        viewTemplates.classList.add('hidden');
-        viewSettings.classList.remove('hidden');
+        switchToTab('ai');
     });
+
+    // Check URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tab') === 'ai') {
+        switchToTab('ai');
+    }
 
     // Save Settings
     const geminiApiKeyInp = document.getElementById('geminiApiKey');

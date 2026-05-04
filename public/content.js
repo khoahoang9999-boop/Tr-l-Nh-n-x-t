@@ -44,17 +44,17 @@ async function fillCommentsAsync(config) {
     let rows = [];
     switch(platform) {
         case 'csdl':
-            rows = document.querySelectorAll('table tbody tr');
+            rows = document.querySelectorAll('tr'); // Broaden search because CSDL might use multiple tables or div-based rows
             break;
         case 'vnedu':
-            rows = document.querySelectorAll('.x-grid-row, .table tbody tr');
+            rows = document.querySelectorAll('.x-grid-row, tr');
             break;
         default:
             rows = document.querySelectorAll('tr');
     }
 
     if (rows.length === 0) {
-        throw new Error("Không tìm thấy bảng nhập liệu lớp học!");
+        return 0; // Return 0 instead of throwing so we don't pollute responses in a multi-frame setup
     }
 
     let fillCount = 0;
@@ -97,11 +97,20 @@ async function fillCommentsAsync(config) {
                 }
             }
 
-            const textInputs = Array.from(row.querySelectorAll('textarea, input[type="text"]:not([readonly]), input.nhan-xet'));
-            // Prefer textarea, or input with nhan-xet class/placeholder, or just the last input in the row
-            const commentInput = textInputs.find(el => el.tagName.toLowerCase() === 'textarea') 
-                || textInputs.find(el => el.className.toLowerCase().includes('nhan-xet') || el.placeholder.toLowerCase().includes('nhận xét'))
-                || textInputs[textInputs.length - 1];
+            const textInputs = Array.from(row.querySelectorAll('textarea:not([disabled]):not([readonly]), input[type="text"]:not([readonly]):not([disabled]), input.nhan-xet'));
+            
+            let commentInput = null;
+            const textareas = textInputs.filter(el => el.tagName.toLowerCase() === 'textarea');
+            
+            if (role === 'HOC_BA') {
+                // For Hoc Ba, prefer the LAST textarea or input
+                commentInput = textareas[textareas.length - 1] || textInputs[textInputs.length - 1];
+            } else {
+                // For GVBM, prefer the FIRST textarea (usually Mon Hoc comment) or specific class
+                commentInput = textareas[0] 
+                    || textInputs.find(el => el.className.toLowerCase().includes('nhan-xet') || el.placeholder?.toLowerCase().includes('nhận xét'))
+                    || textInputs[textInputs.length - 1];
+            }
                 
             if (!commentInput) continue;
 

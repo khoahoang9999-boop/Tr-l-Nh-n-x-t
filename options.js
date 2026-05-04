@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiPromptTemplateInp = document.getElementById('aiPromptTemplate');
     const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 
-    const DEFAULT_KEYS = "AIzaSyBZ7HYd1I4jfOZQXjFuL4w1eYC_a-7DhZE, AIzaSyC8yFEfZdR9BwF_e5NbCUYFgW2RZB8wBuI, AIzaSyAz7tBBhmWQ8nzRDPLU9lK6IkOV0AZIKDg";
+    const DEFAULT_KEYS = "";
 
     if(typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         chrome.storage.local.get(['geminiApiKey', 'geminiModelId', 'aiPromptTemplate', 'commentsData'], (result) => {

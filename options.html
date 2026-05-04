@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Cấu hình Lời phê</title>
+    <script>
+        // Prevent "Cannot set property fetch of #<Window> which has only a getter" from third-party libraries
+        let origFetch = window.fetch;
+        Object.defineProperty(window, 'fetch', {
+            get: () => origFetch,
+            set: () => {},
+            configurable: true
+        });
+    </script>
+    <link rel="stylesheet" href="/src/index.css">
+    <style>
+        body { margin: 0; font-family: sans-serif; }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] flex font-sans text-slate-800 min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-72 bg-slate-900 text-white flex flex-col fixed h-full z-10">
+        <div class="p-6 border-b border-slate-800 flex items-center gap-3">
+            <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-white shadow-md shadow-blue-900/50">P</div>
+            <h1 class="text-lg font-bold tracking-tight">Trợ lý Nhận xét Pro</h1>
+        </div>
+        <nav class="flex-1 p-4 space-y-1">
+            <div class="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Cấu hình hệ thống</div>
+            <a href="#" id="navTemplates" class="flex items-center gap-3 px-4 py-2.5 bg-blue-600 rounded-md text-sm font-medium shadow-sm transition-colors cursor-pointer">Quản lý Lời phê mẫu</a>
+            <a href="#" id="navSettings" class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800 text-slate-300 rounded-md text-sm font-medium transition-colors cursor-pointer">Cấu hình Trợ lý AI</a>
+            <div class="pt-4 px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Nền tảng hỗ trợ</div>
+            <div class="flex items-center gap-3 px-4 py-2 text-sm text-slate-400">• CSDL Ngành</div>
+            <div class="flex items-center gap-3 px-4 py-2 text-sm text-slate-400">• vnEdu Hệ thống</div>
+        </nav>
+        <div class="p-4 bg-slate-950 text-xs text-slate-500 font-mono text-center border-t border-slate-800">
+            Phiên bản 1.0.4 - Manifest V3
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col relative ml-72">
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-10">
+            <div class="flex items-center gap-2">
+                <span class="text-sm text-slate-500 font-medium italic">Dashboard /</span>
+                <span class="text-sm font-semibold text-slate-800">Quản lý Lời phê Mẫu</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="addBtn" class="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-md shadow drop-shadow-sm cursor-pointer hover:bg-blue-700 transition-colors">+ Thêm Lời Phê</button>
+            </div>
+        </header>
+
+        <div id="viewTemplates" class="p-8 flex flex-col gap-8 max-w-5xl">
+            <div class="w-full space-y-6">
+                <!-- Filters -->
+                <div class="flex flex-wrap gap-4 mb-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex-1 min-w-[150px]">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Cấp học</label>
+                        <select id="filterCapHoc" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors font-medium">
+                            <option value="TH">Tiểu học</option>
+                            <option value="THCS" selected>THCS</option>
+                            <option value="THPT">THPT</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-[150px]">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Khối lớp</label>
+                        <select id="filterKhoiLop" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors font-medium">
+                            <!-- Dynamic -->
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-[200px]" id="filterMonHocContainer">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Môn học</label>
+                        <select id="filterMonHoc" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors font-medium">
+                            <!-- Dynamic -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Role Tabs -->
+                <div class="flex border-b border-slate-200 gap-8" id="roleTabs">
+                    <button data-role="GVBM" class="tab-btn pb-4 border-b-2 border-blue-600 font-bold text-blue-600 text-sm cursor-pointer tracking-wide uppercase transition-all duration-200">Giáo Viên Bộ Môn</button>
+                    <button data-role="HOC_BA" class="tab-btn pb-4 border-b-2 border-transparent text-slate-400 text-sm hover:text-slate-600 font-bold cursor-pointer tracking-wide uppercase transition-all duration-200">Học bạ (GVCN/Lãnh đạo)</button>
+                </div>
+
+                <!-- Alert for GVBM -->
+                <div id="gvbmAlert" class="bg-blue-50/80 border border-blue-100 p-5 rounded-xl text-sm text-blue-900 shadow-sm flex gap-3 items-start">
+                    <svg class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div>
+                        <p class="font-bold">Nhận xét Học bạ (Lãnh đạo/GVCN):</p>
+                        <ul class="list-disc ml-5 mt-2 space-y-1 text-blue-800">
+                            <li>Bạn có thể dùng dấu <code>\n</code> để xuống dòng, hệ thống sẽ tự động tách thành 3 dòng / 3 gạch đầu dòng tương ứng.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Grid Content -->
+                <div id="commentsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Dynamic rendering here -->
+                </div>
+
+                <!-- CSV Import UI -->
+                <div class="bg-blue-50 border border-blue-100 p-8 rounded-2xl flex items-center justify-between shadow-sm mt-8">
+                    <div class="flex items-center gap-5">
+                        <div class="p-3 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-200 shrink-0">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-blue-950">Nhập liệu hàng loạt bằng Excel</h3>
+                            <p class="text-sm text-blue-700 mt-0.5">Tải lên tệp .xlsx (Cấu trúc Cột: Cấp Học, Khối Lớp, Vai Trò, Môn Học, Mức Độ, Nội Dung)</p>
+                            <div class="flex gap-2 items-center mt-3">
+                                <input type="file" id="csvFileInput" accept=".xlsx,.xls" class="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer text-red-600 font-medium" />
+                                <button id="downloadTemplateBtn" class="px-4 py-2 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 rounded-md cursor-pointer transition-colors shadow-sm whitespace-nowrap">Tải File Mẫu</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="importCsvBtn" class="px-8 py-3 bg-blue-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-200/50 cursor-pointer hover:bg-blue-700 hover:shadow-blue-300 transition-all uppercase tracking-wider">Tiến Hành Tải Lên</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="viewSettings" class="p-8 flex flex-col gap-8 max-w-3xl hidden">
+            <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-8">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 mb-2">Cấu hình Trợ lý AI (Gemini)</h2>
+                    <p class="text-sm text-slate-500">Cấu hình API Key để kích hoạt nhận xét tự động. API Key sẽ được lưu an toàn tại bộ nhớ trình duyệt.</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Gemini API Key</label>
+                        <input type="password" id="geminiApiKey" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-shadow" placeholder="AIzaSy..." />
+                        <p class="text-xs text-slate-500 mt-2">Lấy API Key miễn phí tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-600 hover:underline">Google AI Studio</a>.</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Prompt Mẫu cho AI (Tùy chọn biến {diem}, {mon}, {ten})</label>
+                        <textarea id="aiPromptTemplate" rows="5" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500 transition-shadow font-mono text-[13px] text-slate-600">Bạn là một giáo viên chuyên nghiệp. Nhận xét ngắn gọn, nhân văn, động viên học sinh đạt {diem} điểm môn {mon}. Không quá 12 từ.</textarea>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                    <button id="saveSettingsBtn" class="px-6 py-2.5 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 cursor-pointer font-bold transition-all">Lưu Cấu Hình</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal cho việc thêm/sửa -->
+    <div id="editModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200/60">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 class="font-bold text-slate-800 text-lg tracking-tight" id="modalTitle">Thêm Lời Phê</h3>
+                <button id="closeModal" class="text-slate-400 hover:text-red-500 cursor-pointer bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors">&times;</button>
+            </div>
+            <div class="p-6 space-y-5">
+                <div id="levelSelectContainer">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Mức Điểm</label>
+                    <select id="entryLevel" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow transition-colors">
+                        <option value="Giỏi">Mức: Giỏi (≥ 8.0)</option>
+                        <option value="Khá">Mức: Khá (≥ 6.5)</option>
+                        <option value="Đạt">Mức: Đạt (≥ 5.0)</option>
+                        <option value="Chưa Đạt">Mức: Chưa Đạt (&lt; 5.0)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block flex items-center justify-between">
+                        Nội dung nhận xét <span class="badge bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] normal-case">Hỗ trợ Markdown cơ bản</span>
+                    </label>
+                    <textarea id="entryContent" rows="5" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-sans transition-shadow transition-colors placeholder:text-slate-400" placeholder="Nhập nội dung lời phê..."></textarea>
+                    <p class="text-[11px] text-slate-500 mt-2 flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Ấn Enter để xuống dòng (tự động tách thành nhiều gạch đầu dòng tương ứng cho học bạ).</p>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex justify-end gap-3">
+                <button id="cancelModal" class="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-lg cursor-pointer transition-colors">Hủy Bỏ</button>
+                <button id="saveEntry" class="px-5 py-2.5 text-sm font-semibold bg-blue-600 text-white rounded-lg shadow-md shadow-blue-200 hover:bg-blue-700 cursor-pointer transition-all">Lưu Lời Phê</button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="/options.js"></script>
+</body>
+</html>

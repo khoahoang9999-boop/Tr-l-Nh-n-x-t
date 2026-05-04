@@ -72,10 +72,11 @@
         </div>
         <div class="flex items-center gap-4">
           <button
-            id="addBtn"
-            class="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-md shadow drop-shadow-sm cursor-pointer hover:bg-blue-700 transition-colors"
+            id="saveConfigBtn"
+            class="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-md shadow drop-shadow-sm cursor-pointer hover:bg-blue-700 transition-colors flex items-center gap-2"
           >
-            + Thêm Lời Phê
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+            Lưu Cấu Hình
           </button>
         </div>
       </header>
@@ -172,7 +173,7 @@
           </div>
 
           <!-- Grid Content -->
-          <div id="commentsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div id="configContainer" class="flex flex-col gap-6">
             <!-- Dynamic rendering here -->
           </div>
 
@@ -233,101 +234,7 @@
       </div>
     </main>
 
-    <!-- Modal cho việc thêm/sửa -->
-    <div
-      id="editModal"
-      class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50"
-    >
-      <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200/60"
-      >
-        <div
-          class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50"
-        >
-          <h3
-            class="font-bold text-slate-800 text-lg tracking-tight"
-            id="modalTitle"
-          >
-            Thêm Lời Phê
-          </h3>
-          <button
-            id="closeModal"
-            class="text-slate-400 hover:text-red-500 cursor-pointer bg-slate-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-          >
-            &times;
-          </button>
-        </div>
-        <div class="p-6 space-y-5">
-          <div id="levelSelectContainer">
-            <label
-              class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block"
-              >Mức Điểm</label
-            >
-            <select
-              id="entryLevel"
-              class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow transition-colors"
-            >
-              <option value="Giỏi">Mức: Giỏi (≥ 8.0)</option>
-              <option value="Khá">Mức: Khá (≥ 6.5)</option>
-              <option value="Đạt">Mức: Đạt (≥ 5.0)</option>
-              <option value="Chưa Đạt">Mức: Chưa Đạt (&lt; 5.0)</option>
-            </select>
-          </div>
-          <div>
-            <label
-              class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block flex items-center justify-between"
-            >
-              Nội dung nhận xét
-              <span
-                class="badge bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] normal-case"
-                >Hỗ trợ Markdown cơ bản</span
-              >
-            </label>
-            <textarea
-              id="entryContent"
-              rows="5"
-              class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-sans transition-shadow transition-colors placeholder:text-slate-400"
-              placeholder="Nhập nội dung lời phê..."
-            ></textarea>
-            <p
-              class="text-[11px] text-slate-500 mt-2 flex items-center gap-1.5"
-            >
-              <svg
-                class="w-3.5 h-3.5 text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                ></path>
-              </svg>
-              Ấn Enter để xuống dòng (tự động tách thành nhiều gạch đầu dòng
-              tương ứng cho học bạ).
-            </p>
-          </div>
-        </div>
-        <div
-          class="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex justify-end gap-3"
-        >
-          <button
-            id="cancelModal"
-            class="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-lg cursor-pointer transition-colors"
-          >
-            Hủy Bỏ
-          </button>
-          <button
-            id="saveEntry"
-            class="px-5 py-2.5 text-sm font-semibold bg-blue-600 text-white rounded-lg shadow-md shadow-blue-200 hover:bg-blue-700 cursor-pointer transition-all"
-          >
-            Lưu Lời Phê
-          </button>
-        </div>
-      </div>
-    </div>
+
 
     <script type="module" src="/options.js"></script>
   </body>

@@ -5,189 +5,56 @@
     <link rel="stylesheet" href="/src/index.css" />
     <style>
       body {
-        width: 320px;
+        width: 340px;
         margin: 0;
         font-family: sans-serif;
       }
     </style>
   </head>
-  <body class="bg-white text-slate-800">
-    <div
-      class="bg-slate-900 flex items-center justify-center text-white relative h-12 shadow-md"
-    >
-      <div
-        class="absolute inset-0 flex items-center justify-center pointer-events-none flex-col mt-0.5"
-      >
-        <div class="flex items-center gap-1.5 drop-shadow">
-          <span
-            class="bg-gradient-to-b from-yellow-200 to-yellow-500 text-blue-900 px-1 py-0.5 rounded text-[10px] font-black tracking-wider shadow-sm"
-            >PRO</span
-          >
-          <span
-            class="text-[14px] font-bold tracking-wide bg-gradient-to-b from-yellow-50 to-yellow-300 bg-clip-text text-transparent"
-            >Trợ lý Nhận xét</span
-          >
-        </div>
+  <body class="bg-slate-50 text-slate-800">
+    <div class="bg-[#1e40af] flex items-center p-3 text-white shadow-md rounded-b-xl mb-4 mx-2 mt-[-4px]">
+      <svg class="w-5 h-5 mr-2 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+      <div class="flex-1">
+          <h1 class="text-sm font-bold tracking-wide">Trợ lý Nhận xét Pro</h1>
       </div>
-      <div class="absolute right-3 top-0 bottom-0 flex items-center">
-        <svg
-          id="settingsBtn"
-          class="w-4 h-4 opacity-70 cursor-pointer hover:opacity-100 transition-opacity relative z-10"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-          />
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-          />
+      <div>
+        <svg id="settingsBtn" class="w-4 h-4 opacity-70 cursor-pointer hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       </div>
     </div>
-    <div class="p-4 space-y-3">
-      <div class="flex gap-2">
-        <div class="flex-1">
-          <label class="text-[10px] font-bold text-red-500 uppercase"
-            >Cấp học</label
-          >
-          <select
-            id="capHoc"
-            class="w-full mt-1 p-2 text-sm bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-500 transition-colors"
-          >
-            <option value="TH">Tiểu học (TH)</option>
-            <option value="THCS" selected>Trung học Cơ sở (THCS)</option>
-            <option value="THPT">Trung học Phổ thông (THPT)</option>
-          </select>
-        </div>
-        <div class="flex-1">
-          <label class="text-[10px] font-bold text-red-500 uppercase"
-            >Khối lớp</label
-          >
-          <select
-            id="khoiLop"
-            class="w-full mt-1 p-2 text-sm bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-500 transition-colors"
-          >
-            <!-- Dynamic -->
-          </select>
-        </div>
+    
+    <div class="px-5 pb-5 space-y-4">
+      <div class="bg-green-50 border border-green-200 text-green-700 p-3 rounded-lg flex items-center justify-center gap-2">
+         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+         <span class="text-[13px] font-bold">Đã kích hoạt bản quyền</span>
       </div>
-      <div>
-        <label class="text-[10px] font-bold text-red-500 uppercase"
-          >Nền tảng</label
-        >
-        <select
-          id="platform"
-          class="w-full mt-1 p-2 text-sm bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-500 transition-colors"
-        >
-          <option value="csdl">CSDL Ngành</option>
-          <option value="vnedu">vnEdu</option>
-        </select>
-      </div>
-      <div>
-        <label class="text-[10px] font-bold text-red-500 uppercase"
-          >Vai trò / Hạng mục</label
-        >
-        <select
-          id="roleItem"
-          class="w-full mt-1 p-2 text-sm bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-500 transition-colors"
-        >
-          <option value="GVBM">Nhận xét môn học (HK)</option>
-          <option value="HOC_BA">Nhận xét cuối năm (Ghi Học Bạ)</option>
-        </select>
-      </div>
-      <div id="subjectContainer">
-        <label class="text-[10px] font-bold text-red-500 uppercase"
-          >Môn học / Hạng mục</label
-        >
-        <select
-          id="subject"
-          class="w-full mt-1 p-2 text-sm bg-slate-50 border border-slate-200 rounded outline-none focus:border-blue-500 transition-colors"
-        >
-          <!-- Dynamic -->
-        </select>
-      </div>
-      <div class="pt-2 border-t border-slate-100 flex gap-4">
-        <label class="text-[10px] font-bold text-red-500 uppercase pt-1"
-          >Nhận xét:</label
-        >
-        <label class="flex items-center gap-1.5 text-sm cursor-pointer">
-          <input
-            type="radio"
-            name="method"
-            value="template"
-            checked
-            class="text-blue-600 focus:ring-blue-500"
-          />
-          <span class="text-red-500 font-bold">Mẫu</span>
-        </label>
-        <label class="flex items-center gap-1.5 text-sm cursor-pointer">
-          <input
-            type="radio"
-            name="method"
-            value="ai"
-            id="aiMethod"
-            class="text-indigo-600 focus:ring-indigo-500"
-          />
-          <span
-            class="bg-indigo-100 text-red-500 px-1 py-0.5 rounded text-xs font-bold leading-none"
-            >AI</span
-          >
-        </label>
-      </div>
-      <div
-        id="aiSettingsGroup"
-        class="hidden pt-2 border-t border-slate-100 flex flex-col gap-2"
-      >
-        <div class="flex items-center justify-between">
-          <label class="text-[10px] font-bold text-indigo-500 uppercase"
-            >Danh sách API Keys</label
-          >
-          <button
-            id="addApiKeyBtn"
-            class="text-[9px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 hover:bg-blue-100 cursor-pointer"
-          >
-            + Thêm Key
-          </button>
-        </div>
-        <div
-          id="apiKeysList"
-          class="space-y-1.5 max-h-32 overflow-y-auto pr-1 text-xs"
-        ></div>
-        <p class="text-[9px] text-slate-400 leading-tight">
-          Gợi ý: Dụng 2-3 keys để hệ thống luôn ổn định khi chấm nhiều lớp.
-        </p>
-      </div>
-      <div class="pt-2">
-        <button
-          id="runBtn"
-          class="w-full py-2.5 bg-blue-600 text-white font-bold rounded shadow-md shadow-blue-100 hover:bg-blue-700 transition-colors cursor-pointer"
-        >
-          Chạy Tự Động Điền
-        </button>
-      </div>
-      <button
-        id="optionsBtn"
-        class="w-full py-2 text-xs text-blue-600 font-medium hover:bg-blue-50 rounded border border-blue-200 cursor-pointer transition-colors shadow-sm"
-      >
-        Mở Cấu hình Lời phê
+      
+      <p class="text-xs text-slate-600 leading-relaxed text-center px-2">
+        Hãy chọn đúng Môn học và Lớp trên trang, sau đó bấm nút dưới đây để công cụ quét và tự động điền.
+      </p>
+
+      <button id="runBtn" class="w-full bg-[#1e40af] hover:bg-blue-800 text-white font-bold py-3.5 px-4 rounded-full shadow-lg shadow-blue-200 transition-all cursor-pointer flex justify-center items-center gap-2 active:scale-95">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        CHẠY TỰ ĐỘNG ĐIỀN
       </button>
+
+      <div class="flex flex-col gap-2 pt-2">
+      </div>
+      
+      <div class="flex justify-between items-center text-xs pt-1 border-t border-slate-200 mt-4">
+         <button id="optionsBtn" class="text-blue-600 hover:text-blue-800 font-medium hover:underline cursor-pointer">Sửa mẫu nhận xét</button>
+         <span class="text-slate-400">Tài khoản: GV</span>
+      </div>
+
     </div>
-    <div
-      class="bg-slate-50 p-2 border-t border-slate-100 flex items-center justify-center gap-1.5 min-h-[36px]"
-    >
-      <div id="statusDot" class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-      <span id="statusText" class="text-[10px] font-medium text-slate-400"
-        >Đang chờ lệnh...</span
-      >
+    
+    <div id="statusArea" class="hidden bg-slate-100 p-2 border-t border-slate-200 flex items-center justify-center gap-1.5 text-xs">
+      <div id="statusDot" class="w-2 h-2 rounded-full bg-slate-300"></div>
+      <span id="statusText" class="font-medium text-slate-500">Đang chờ lệnh...</span>
     </div>
+
     <script type="module" src="/popup.js"></script>
   </body>
 </html>

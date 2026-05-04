@@ -1,7 +1,7 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "fillComments") {
         fillCommentsAsync(request.config).then(result => {
-             sendResponse({success: true, count: result});
+             sendResponse({success: true, count: result.count, detectedMon: result.detectedMon});
         }).catch(err => {
              console.error(err);
              sendResponse({success: false, error: err.message});
@@ -11,21 +11,64 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 async function fillCommentsAsync(config) {
-    const { platform, role, subject, capHoc = 'THCS', khoiLop = '6', method } = config;
+    let method = config.method || 'template';
 
-    const storageResult = await chrome.storage.local.get(['commentsData', 'geminiApiKey', 'geminiModelId', 'aiPromptTemplate']);
+    const storageResult = await chrome.storage.local.get(['commentsData']);
     const db = storageResult.commentsData;
 
-    if (method === 'template' && (!db || !db.THCS || Object.keys(db.THCS).length === 0)) {
-        throw new Error("Chưa khởi tạo dữ liệu Mẫu! Vui lòng bấm vào icon răng cưa trên góc phải để mở trang Cấu hình Lời phê, hệ thống sẽ tự động tạo đủ mẫu cho bạn.");
-    }
-    const DEFAULT_KEYS = "";
-    let resolvedApiKey = storageResult.geminiApiKey;
-    if (!resolvedApiKey || resolvedApiKey.trim() === '') resolvedApiKey = DEFAULT_KEYS;
+    // AUTO DETECT LOGIC
+    let role = 'GVBM';
+    let capHoc = 'THCS';
+    let khoiLop = '6';
+    let subject = '';
 
-    if (method === 'ai' && (!resolvedApiKey || resolvedApiKey.trim() === '')) {
-        throw new Error("Chưa cấu hình API Key cho AI!");
+    const pageText = document.body.innerText.toLowerCase();
+    
+    if (pageText.includes('học bạ') || pageText.includes('tổng kết') || pageText.includes('năng lực')) {
+        role = 'HOC_BA';
     }
+
+    if (pageText.includes('thpt') || pageText.includes('phổ thông')) { capHoc = 'THPT'; }
+    else if (pageText.includes('tiểu học')) { capHoc = 'TH'; }
+
+    const topInputs = Array.from(document.querySelectorAll('input[type="text"]'));
+    const valSet = Array.from(new Set(topInputs.map(el => el.value.trim())));
+
+    for (const val of valSet) {
+        if (!val) continue;
+        const lowVal = val.toLowerCase();
+        
+        if (lowVal.startsWith('khối ')) {
+            const k = val.replace(/\D/g, '');
+            if (k) {
+                khoiLop = k;
+                if (parseInt(k) >= 10) capHoc = 'THPT';
+                else if (parseInt(k) <= 5) capHoc = 'TH';
+                else capHoc = 'THCS';
+            }
+        }
+        
+        if (role === 'GVBM' && db && db[capHoc] && db[capHoc][khoiLop] && db[capHoc][khoiLop].GVBM) {
+            const availSubs = Object.keys(db[capHoc][khoiLop].GVBM);
+            if (availSubs.includes(val)) {
+                subject = val;
+            }
+        }
+    }
+    
+    if (role === 'GVBM' && !subject && db && db[capHoc] && db[capHoc][khoiLop] && db[capHoc][khoiLop].GVBM) {
+         const availSubs = Object.keys(db[capHoc][khoiLop].GVBM);
+         for(let sub of availSubs) {
+             const paddedSub = ' ' + sub.toLowerCase() + ' ';
+             if (pageText.includes(paddedSub)) {
+                 subject = sub;
+                 break;
+             }
+         }
+         if (!subject && availSubs.length > 0) subject = availSubs[0]; // fallback
+    }
+
+    const platform = pageText.includes('csdl') ? 'csdl' : 'vnedu';
 
     const formatComment = (text, roleConfig) => {
         let formatted = text.trim();
@@ -75,7 +118,7 @@ async function fillCommentsAsync(config) {
     let fillCount = 0;
     let lastRowError = null;
     
-    // Validate pool if using template
+    // Validate pool
     const getCommentsPool = () => {
         if (!db || !db[capHoc] || !db[capHoc][khoiLop]) return null;
         if (role === 'GVBM') {
@@ -84,26 +127,24 @@ async function fillCommentsAsync(config) {
         return db[capHoc][khoiLop].HOC_BA;
     };
     
-    const commentsPool = method === 'template' ? getCommentsPool() : null;
+    const commentsPool = getCommentsPool();
     
-    if (method === 'template') {
-        if (!commentsPool) {
-            throw new Error(`Môn học/Hạng mục này chưa có dữ liệu lời phê. Vui lòng cấu hình trước.`);
-        }
-        let totalCount = 0;
-        if (role === 'GVBM') {
-            Object.values(commentsPool).forEach(arr => {
-                if (Array.isArray(arr)) totalCount += arr.length;
-            });
-        } else {
-            if (Array.isArray(commentsPool)) totalCount += commentsPool.length;
-        }
-        if (totalCount === 0) {
-            throw new Error(`Chưa có câu lời phê nào cho lựa chọn này. Vui lòng thêm mẫu.`);
-        }
+    if (!commentsPool) {
+        throw new Error(`Môn học/Hạng mục này chưa có dữ liệu lời phê. Vui lòng cấu hình trước.`);
+    }
+    let totalCount = 0;
+    if (role === 'GVBM') {
+        Object.values(commentsPool).forEach(arr => {
+            if (Array.isArray(arr)) totalCount += arr.length;
+        });
+    } else {
+        if (Array.isArray(commentsPool)) totalCount += commentsPool.length;
+    }
+    if (totalCount === 0) {
+        throw new Error(`Chưa có câu lời phê nào cho lựa chọn này. Vui lòng thêm mẫu.`);
     }
 
-    // Process rows sequentially to avoid API rate limiting issues if AI is used
+    // Process rows sequentially
     for (const row of Array.from(rows)) {
         try {
             // Must have enough cells to be a valid data row (avoid headers/navbars)
@@ -116,17 +157,14 @@ async function fillCommentsAsync(config) {
             // Attempt to find student name (usually in the second or third column)
             const textCells = Array.from(row.querySelectorAll('td, span, div.x-grid-cell-inner')).map(el => el.innerText.trim());
             
-            // Skip rows that look like purely headers (e.g. containing 'STT', 'Họ tên')
+            // Skip rows that look like purely headers
             const isHeader = textCells.some(t => t.toLowerCase() === 'họ tên' || t.toLowerCase() === 'stt');
             if (isHeader) continue;
-
-            // Skip filter bars
+            
+            // Skip filter bars robustly
             const isFilterBar = textCells.some(t => {
-                const lower = t.toLowerCase();
-                return lower.includes('khối:') || lower === 'khối' || 
-                       lower.includes('lớp:') || lower === 'lớp' || 
-                       lower.includes('môn học:') || lower === 'môn học' ||
-                       lower.includes('học kỳ:') || lower === 'học kỳ';
+                const lower = t.toLowerCase().trim();
+                return lower.includes('khối') || lower.includes('lớp') || lower.includes('môn học') || lower.includes('cấu hình nhập');
             });
             if (isFilterBar) continue;
 
@@ -136,7 +174,7 @@ async function fillCommentsAsync(config) {
             }
 
             const textInputs = Array.from(row.querySelectorAll('textarea, input[type="text"], input:not([type]), input.nhan-xet'))
-                .filter(el => !el.disabled && !el.readOnly && el.type !== 'hidden' && el.offsetParent !== null && !el.hidden && el.style.display !== 'none');
+                .filter(el => !el.disabled && !el.readOnly && el.type !== 'hidden' && el.style.display !== 'none');
             
             if (textInputs.length === 0) continue;
             
@@ -146,14 +184,10 @@ async function fillCommentsAsync(config) {
             const isCodeInput = (el) => {
                 if (el.tagName.toLowerCase() === 'textarea') return false;
                 const attrStr = (el.id + " " + (el.name || "") + " " + (el.className || "")).toLowerCase();
-                if (attrStr.includes('manx') || attrStr.includes('ma_nx') || attrStr.includes('macmt')) return true;
-                if (el.maxLength && el.maxLength > 0 && el.maxLength < 50) return true;
-                if (el.style && el.style.width) {
-                    const w = parseInt(el.style.width);
-                    if (w > 0 && w < 100) return true;
-                }
+                if (attrStr.includes('manx') || attrStr.includes('ma_nx') || attrStr.includes('macmt') || attrStr.includes('idnhanxet')) return true;
+                
                 const rect = el.getBoundingClientRect();
-                if (rect.width > 0 && rect.width < 100) return true;
+                if (rect.width > 0 && rect.width < 80) return true;
                 return false;
             };
 
@@ -162,14 +196,12 @@ async function fillCommentsAsync(config) {
             
             if (contentInputs.length > 0) {
                 if (role === 'HOC_BA') {
-                    // Always pick the LAST valid comment input for Hoc Ba
+                    // Always pick the LAST valid comment input, because "Nội dung" is typically to the right of "Mã nhận xét"
                     commentInput = contentInputs[contentInputs.length - 1];
                 } else {
-                    // Always pick the FIRST valid comment input for GVBM
                     commentInput = contentInputs[0];
                 }
             } else {
-                // Fallback: If no content inputs found by our filter
                 commentInput = textInputs[role === 'HOC_BA' ? textInputs.length - 1 : 0];
             }
                 
@@ -177,6 +209,7 @@ async function fillCommentsAsync(config) {
 
             // Find the closest ancestor TD to look backwards from
             const commentTd = commentInput.closest('td, div.x-grid-cell, div.x-grid3-cell');
+            let averageScore = null;
             let foundScore = null;
 
             if (commentTd && commentTd.parentElement) {
@@ -184,7 +217,8 @@ async function fillCommentsAsync(config) {
                 const commentIndex = allCells.indexOf(commentTd);
                 
                 if (commentIndex !== -1) {
-                    for (let i = commentIndex - 1; i >= 0; i--) {
+                    // Limit backward search to prevent picking up STT (usually in the first few cells)
+                    for (let i = commentIndex - 1; i >= Math.max(3, commentIndex - 8); i--) {
                         const cell = allCells[i];
                         const text = cell.innerText.trim();
                         // If there are inputs that might have the score inside
@@ -212,10 +246,9 @@ async function fillCommentsAsync(config) {
                 }
             }
             
-            // Fallback to the old logic if we didn't find anything backwards
             if (foundScore !== null) {
                 averageScore = foundScore;
-            } else {
+            } else if (commentIndex === -1) {
                 const targetCells = Array.from(row.querySelectorAll('td, div.x-grid-cell, div.x-grid3-cell')).slice(1);
                 const numberValues = Array.from(targetCells).flatMap(cell => {
                     const els = Array.from(cell.querySelectorAll('input[type="text"], span, div.x-grid-cell-inner'));
@@ -243,56 +276,49 @@ async function fillCommentsAsync(config) {
 
             let chosenComment = "";
             let level = "Đạt";
+            let defaultCode = "";
             
             if (averageScore !== null) {
-                if (averageScore >= 8.0) level = "Giỏi";
-                else if (averageScore >= 6.5) level = "Khá";
-                else if (averageScore >= 5.0) level = "Đạt";
-                else level = "Chưa Đạt";
+                if (role === 'GVBM' && commentsPool) {
+                    let matchedLevel = null;
+                    for (const [lvl, config] of Object.entries(commentsPool)) {
+                        if (config && typeof config === 'object' && !Array.isArray(config)) {
+                            if (averageScore >= config.min && averageScore <= config.max) {
+                                matchedLevel = lvl;
+                                defaultCode = config.code || "";
+                                break;
+                            }
+                        }
+                    }
+                    if (matchedLevel) {
+                        level = matchedLevel;
+                    } else {
+                        // Fallback generic logic if no match or old structure
+                        if (averageScore >= 8.0) level = "Tốt";
+                        else if (averageScore >= 6.5) level = "Khá";
+                        else if (averageScore >= 5.0) level = "Đạt";
+                        else level = "Chưa Đạt";
+                        if (!commentsPool["Tốt"] && commentsPool["Giỏi"] && level === "Tốt") level = "Giỏi";
+                    }
+                } else {
+                    if (averageScore >= 8.0) level = "Tốt";
+                    else if (averageScore >= 6.5) level = "Khá";
+                    else if (averageScore >= 5.0) level = "Đạt";
+                    else level = "Chưa Đạt";
+                }
             }
 
-            if (method === 'template') {
-                if (commentsPool) {
-                    if (role === 'GVBM') {
-                         chosenComment = getRandom(commentsPool[level]);
-                    } else {
-                         chosenComment = getRandom(commentsPool);
+            if (commentsPool) {
+                if (role === 'GVBM') {
+                    const targetPool = commentsPool[level];
+                    if (Array.isArray(targetPool)) {
+                        chosenComment = getRandom(targetPool);
+                    } else if (targetPool && Array.isArray(targetPool.comments)) {
+                        chosenComment = getRandom(targetPool.comments);
                     }
+                } else {
+                     chosenComment = getRandom(commentsPool);
                 }
-            } else if (method === 'ai') {
-                // We show loading state on the input
-                const oldPhm = commentInput.placeholder;
-                commentInput.placeholder = "AI đang soạn...";
-                try {
-                    const aiResult = await new Promise((resolve, reject) => {
-                        chrome.runtime.sendMessage({
-                            action: "generateAIComment",
-                            payload: {
-                                apiKey: resolvedApiKey,
-                                modelId: storageResult.geminiModelId,
-                                promptTemplate: storageResult.aiPromptTemplate,
-                                diem: averageScore !== null ? averageScore : (level + " (Đánh giá chung)"),
-                                mon: subject || "Chung",
-                                ten: tenHS,
-                                role: role
-                            }
-                        }, response => {
-                            if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-                            else if (response && response.error) reject(new Error(response.error));
-                            else resolve(response.text);
-                        });
-                    });
-                    chosenComment = aiResult;
-                } catch (apiErr) {
-                    console.warn("AI generation failed for a row", apiErr);
-                    lastRowError = apiErr;
-                    chosenComment = "";
-                }
-                commentInput.placeholder = oldPhm || "";
-                
-                // Add sleep to avoid API rate limit (15 req/min on free tier => 4s per req)
-                // If it fails with 429, the error is caught above, but we still want to wait.
-                await new Promise(resolve => setTimeout(resolve, 4000));
             }
 
             if (chosenComment) {
@@ -315,6 +341,31 @@ async function fillCommentsAsync(config) {
                 commentInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
                 commentInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
                 commentInput.blur();
+                
+                if (defaultCode && role === 'GVBM') {
+                    // Try to find code input right before the comment input
+                    let codeInput = null;
+                    const allInputsInRow = Array.from(row.querySelectorAll('textarea, input[type="text"]'));
+                    const ciIndex = allInputsInRow.indexOf(commentInput);
+                    if (ciIndex > 0) {
+                        const possibleCode = allInputsInRow[ciIndex - 1];
+                        if (isCodeInput(possibleCode) || possibleCode.getBoundingClientRect().width < 100) {
+                            codeInput = possibleCode;
+                        }
+                    }
+                    if (codeInput) {
+                        codeInput.focus();
+                        if (nativeInputValueSetter && codeInput.tagName.toLowerCase() === 'input') {
+                            nativeInputValueSetter.call(codeInput, defaultCode);
+                        } else {
+                            codeInput.value = defaultCode;
+                        }
+                        codeInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        codeInput.dispatchEvent(new Event('change', { bubbles: true }));
+                        codeInput.blur();
+                    }
+                }
+                
                 fillCount++;
             }
         } catch (err) {
@@ -329,5 +380,5 @@ async function fillCommentsAsync(config) {
         }
         throw new Error("Không tìm thấy hàng nào có điểm để điền. Vui lòng đảm bảo bảng đã có điểm hoặc chọn đúng ô.");
     }
-    return fillCount;
+    return { count: fillCount, detectedMon: subject };
 }

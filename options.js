@@ -6,67 +6,8 @@ Object.defineProperty(window, "fetch", {
   configurable: true,
 });
 
-import { GRADE_LEVELS, getSubjects, EVAL_LEVELS } from "./shared.js";
+import { GRADE_LEVELS, getSubjects, EVAL_LEVELS, getEmptySubject, generateAllSampleData } from "./shared.js";
 import * as XLSX from "xlsx";
-
-const getEmptySubject = (mon) => {
-  const m = mon ? mon : "học";
-  return {
-    Giỏi: [
-      `Em hiểu bài nhanh, vận dụng kiến thức nhạy bén trong môn ${m}.`,
-      `Có tư duy tốt, luôn hoàn thành xuất sắc các bài tập môn ${m}.`,
-      `Học tập tự giác, đạt kết quả cao trong các bài kiểm tra ${m}.`,
-      `Tích cực phát biểu xây dựng bài, có năng khiếu học tốt môn ${m}.`,
-      `Nắm vững kiến thức trọng tâm, kỹ năng làm bài môn ${m} rất tốt.`,
-    ],
-    Khá: [
-      `Có tiến bộ trong môn ${m}, hiểu bài khá tốt.`,
-      `Chăm chỉ học tập, hoàn thành đầy đủ bài tập môn ${m} được giao.`,
-      `Nắm được kiến thức cơ bản môn ${m}, cần rèn luyện thêm kỹ năng vận dụng.`,
-      `Có cố gắng trong học tập môn ${m}, kết quả đạt loại Khá.`,
-      `Chú ý nghe giảng, ý thức học tập môn ${m} tốt, tiếp tục phát huy.`,
-    ],
-    Đạt: [
-      `Nắm bắt kiến thức môn ${m} ở mức độ cơ bản.`,
-      `Cần chú ý nghe giảng và hoàn thành bài tập môn ${m} đầy đủ hơn.`,
-      `Học lực đạt yêu cầu, tuy nhiên cần chủ động hơn trong học tập môn ${m}.`,
-      `Có cố gắng nhưng kết quả môn ${m} chưa thực sự nổi bật.`,
-      `Cần dành nhiều thời gian ôn bài ở nhà để củng cố kiến thức môn ${m}.`,
-    ],
-    "Chưa Đạt": [
-      `Thường xuyên thiếu tập trung trong giờ học môn ${m}, cần cố gắng nhiều hơn.`,
-      `Chưa nắm được kiến thức cơ bản môn ${m}, cần tăng cường phụ đạo.`,
-      `Kết quả học tập môn ${m} chưa đạt yêu cầu, cần chấn chỉnh lại thái độ học tập.`,
-      `Lười làm bài tập về nhà môn ${m}, phụ huynh cần nhắc nhở thêm.`,
-      `Ý thức học tập môn ${m} chưa tốt, tiếp thu bài còn chậm.`,
-    ],
-  };
-};
-
-const generateAllSampleData = () => {
-  currentData = { TH: {}, THCS: {}, THPT: {} };
-  for (const capHoc of Object.keys(GRADE_LEVELS)) {
-    for (const khoi of GRADE_LEVELS[capHoc]) {
-      const h = khoi;
-      currentData[capHoc][h] = { GVBM: {}, HOC_BA: [] };
-
-      // Add HOC_BA samples
-      currentData[capHoc][h].HOC_BA = [
-        "Năng lực chung: Tự chủ, tự học tốt. Năng lực đặc thù: Vận dụng kiến thức tốt. Phẩm chất: Chăm chỉ, trách nhiệm.",
-        "Năng lực chung: Giao tiếp, hợp tác khá. Năng lực đặc thù: Xử lý tình huống linh hoạt. Phẩm chất: Yêu nước, nhân ái.",
-        "Năng lực chung: Giải quyết vấn đề tốt. Năng lực đặc thù: Tư duy phân tích tốt. Phẩm chất: Trách nhiệm, trung thực.",
-        "Năng lực chung: Tự chủ, giao tiếp khá. Năng lực đặc thù: Thực hành tốt. Phẩm chất: Chăm ngoan, nhân ái.",
-        "Năng lực chung: Tự học khá. Năng lực đặc thù: Cần rèn thêm kỹ năng. Phẩm chất: Có ý thức kỷ luật.",
-      ];
-
-      // Add GVBM samples for all subjects
-      const subjects = getSubjects(capHoc, h);
-      for (const mon of subjects) {
-        currentData[capHoc][h].GVBM[mon] = getEmptySubject(mon);
-      }
-    }
-  }
-};
 
 let currentData = { TH: {}, THCS: {}, THPT: {} };
 let currentRole = "GVBM";
@@ -78,53 +19,52 @@ document.addEventListener("DOMContentLoaded", () => {
   const filterCapHoc = document.getElementById("filterCapHoc");
   const filterKhoiLop = document.getElementById("filterKhoiLop");
   const filterMonHoc = document.getElementById("filterMonHoc");
-  const filterMonHocContainer = document.getElementById(
-    "filterMonHocContainer",
-  );
+  const filterMonHocContainer = document.getElementById("filterMonHocContainer");
 
   const navTemplates = document.getElementById("navTemplates");
   const viewTemplates = document.getElementById("viewTemplates");
+  const saveConfigBtn = document.getElementById("saveConfigBtn");
 
-  // Check URL parameters
   const urlParams = new URLSearchParams(window.location.search);
 
   if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
     chrome.storage.local.get(["commentsData"], (result) => {
-      if (
-        result.commentsData &&
-        Object.keys(result.commentsData).length > 0 &&
-        result.commentsData.THCS &&
-        Object.keys(result.commentsData.THCS).length > 0
-      ) {
+      // Check if data exists and is new format
+      const hasData = result.commentsData && Object.keys(result.commentsData).length > 0;
+      let needsUpgrade = false;
+      if (hasData && result.commentsData.THCS && result.commentsData.THCS["6"] && result.commentsData.THCS["6"].GVBM && result.commentsData.THCS["6"].GVBM["Toán"]) {
+          const testObj = result.commentsData.THCS["6"].GVBM["Toán"];
+          if (Array.isArray(testObj["Giỏi"]) || Array.isArray(testObj["Tốt"])) {
+              needsUpgrade = true; // Old format (array instead of object)
+          }
+      }
+
+      if (hasData && !needsUpgrade) {
         currentData = result.commentsData;
       } else {
-        generateAllSampleData();
+        currentData = generateAllSampleData(); // Overwrite with new format if needed
         chrome.storage.local.set({ commentsData: currentData });
       }
       updateDropdowns();
       renderData();
     });
   } else {
+    currentData = generateAllSampleData();
     updateDropdowns();
     renderData();
   }
 
-  // Cascading logic
   function updateDropdowns(source = null) {
     if (!source || source === "cap") {
       const khois = GRADE_LEVELS[currentCapHoc] || [];
-      filterKhoiLop.innerHTML = khois
-        .map((k) => `<option value="${k}">Khối ${k}</option>`)
-        .join("");
+      filterKhoiLop.innerHTML = khois.map((k) => `<option value="${k}">Khối ${k}</option>`).join("");
       currentKhoiLop = khois[0] || "";
     }
 
     if (!source || source === "cap" || source === "khoi") {
       if (currentRole === "GVBM") {
         const subjects = getSubjects(currentCapHoc, currentKhoiLop);
-        filterMonHoc.innerHTML = subjects
-          .map((s) => `<option value="${s}">${s}</option>`)
-          .join("");
+        filterMonHoc.innerHTML = subjects.map((s) => `<option value="${s}">${s}</option>`).join("");
         currentMonHoc = subjects[0] || "";
       }
     }
@@ -176,247 +116,49 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  const modal = document.getElementById("editModal");
-  const closeBtn = document.getElementById("closeModal");
-  const cancelBtn = document.getElementById("cancelModal");
-  const addBtn = document.getElementById("addBtn");
-  const saveBtn = document.getElementById("saveEntry");
-  const levelContainer = document.getElementById("levelSelectContainer");
-
-  closeBtn.onclick = () => modal.classList.add("hidden");
-  cancelBtn.onclick = () => modal.classList.add("hidden");
-
-  addBtn.onclick = () => {
-    window.editingIndex = -1;
-    document.getElementById("modalTitle").innerText = `Thêm Lời Phê Mới`;
-    document.getElementById("entryContent").value = "";
-    if (currentRole === "GVBM") {
-      levelContainer.style.display = "block";
-    } else {
-      levelContainer.style.display = "none";
-    }
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-  };
-
-  saveBtn.onclick = () => {
-    const content = document.getElementById("entryContent").value.trim();
-    if (!content) return alert("Vui lòng nhập nội dung nhận xét!");
-
+  saveConfigBtn.addEventListener("click", () => {
     ensureDataStructure();
 
     if (currentRole === "GVBM") {
-      const level = document.getElementById("entryLevel").value;
-      const pool =
-        currentData[currentCapHoc][currentKhoiLop].GVBM[currentMonHoc];
+      EVAL_LEVELS.forEach(level => {
+        const minInput = document.getElementById(`min_${level}`);
+        const maxInput = document.getElementById(`max_${level}`);
+        const codeInput = document.getElementById(`code_${level}`);
+        const commentsInput = document.getElementById(`comments_${level}`);
 
-      if (window.editingIndex >= 0 && window.editingLevel) {
-        if (window.editingLevel !== level) {
-          pool[window.editingLevel].splice(window.editingIndex, 1);
-          pool[level].push(content);
-        } else {
-          pool[level][window.editingIndex] = content;
+        if (minInput && maxInput && codeInput && commentsInput) {
+            const min = parseFloat(minInput.value);
+            const max = parseFloat(maxInput.value);
+            const code = codeInput.value.trim();
+            const comments = commentsInput.value.split('\n').map(s => s.trim()).filter(s => s);
+
+            currentData[currentCapHoc][currentKhoiLop].GVBM[currentMonHoc][level] = {
+                min: isNaN(min) ? 0 : min,
+                max: isNaN(max) ? 10 : max,
+                code: code,
+                comments: comments
+            };
         }
-      } else {
-        pool[level].push(content);
-      }
+      });
     } else {
-      const pool = currentData[currentCapHoc][currentKhoiLop].HOC_BA;
-      if (window.editingIndex >= 0) {
-        pool[window.editingIndex] = content;
-      } else {
-        pool.push(content);
-      }
+        const contentArea = document.getElementById("hocba_content");
+        if (contentArea) {
+            currentData[currentCapHoc][currentKhoiLop].HOC_BA = contentArea.value.split('\n').map(s => s.trim()).filter(s => s);
+        }
     }
 
     saveToStorage();
-    modal.classList.add("hidden");
-    renderData();
-  };
-
-  document.getElementById("importCsvBtn").addEventListener("click", () => {
-    const fileInput = document.getElementById("csvFileInput");
-    if (fileInput.files.length === 0) return alert("Vui lòng chọn file Excel.");
-
-    const file = fileInput.files[0];
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      try {
-        const data = e.target.result;
-        const workbook = XLSX.read(data, { type: "binary" });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-        let successCount = 0;
-        for (const sheetName of workbook.SheetNames) {
-          const worksheet = workbook.Sheets[sheetName];
-          const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-          for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            if (!row || row.length < 5) continue;
-            const capHoc = row[0]?.trim();
-            const khoi = String(row[1])?.trim();
-            const role = row[2]?.trim();
-            const monHoc = row[3]?.trim();
-            const level = row[4]?.trim();
-            const content = row[5]?.trim();
-
-            if (!capHoc || !khoi || !role || !content) continue;
-
-            if (!currentData[capHoc]) currentData[capHoc] = {};
-            if (!currentData[capHoc][khoi])
-              currentData[capHoc][khoi] = { GVBM: {}, HOC_BA: [] };
-
-            if (role === "GVBM" && monHoc && level) {
-              if (!currentData[capHoc][khoi].GVBM[monHoc])
-                currentData[capHoc][khoi].GVBM[monHoc] =
-                  getEmptySubject(monHoc);
-              if (!currentData[capHoc][khoi].GVBM[monHoc][level])
-                currentData[capHoc][khoi].GVBM[monHoc][level] = [];
-              currentData[capHoc][khoi].GVBM[monHoc][level].push(content);
-              successCount++;
-            } else if (role === "HOC_BA") {
-              currentData[capHoc][khoi].HOC_BA.push(content);
-              successCount++;
-            }
-          }
-        }
-        saveToStorage();
-        renderData();
-        alert(`Đã thêm thành công ${successCount} dữ liệu từ Excel.`);
-      } catch (err) {
-        console.error(err);
-        alert("File Excel sai định dạng. Vui lòng tải file đúng mẫu.");
-      }
-    };
-    reader.readAsBinaryString(file);
+    alert("Đã lưu cấu hình thành công!");
   });
 
-  document
-    .getElementById("downloadTemplateBtn")
-    .addEventListener("click", () => {
-      const wb = XLSX.utils.book_new();
+  // CSV Import dummy hook - disabled/removed for simplicity of new view, wait we keep it just in case:
+  const importCsvBtn = document.getElementById("importCsvBtn");
+  if (importCsvBtn) {
+      importCsvBtn.addEventListener("click", () => {
+        alert("Tính năng nhập CSV hiện đang được bảo trì trong phiên bản giao diện thiết lập mới.");
+      });
+  }
 
-      const header = [
-        "Cấp Học",
-        "Khối Lớp",
-        "Vai Trò",
-        "Môn Học",
-        "Mức Độ",
-        "Nội Dung",
-      ];
-
-      const ws_th = XLSX.utils.aoa_to_sheet([
-        header,
-        ["TH", "1", "GVBM", "Toán", "Giỏi", "Em hiểu bài nhanh, làm tính tốt."],
-        [
-          "TH",
-          "1",
-          "GVBM",
-          "Toán",
-          "Khá",
-          "Em nắm được bài, cần cẩn thận hơn.",
-        ],
-      ]);
-
-      const ws_thcs = XLSX.utils.aoa_to_sheet([
-        header,
-        [
-          "THCS",
-          "6",
-          "GVBM",
-          "Ngữ văn",
-          "Giỏi",
-          "Em hiểu bài nhanh, vận dụng kiến thức nhạy bén trong môn Ngữ văn.",
-        ],
-        [
-          "THCS",
-          "6",
-          "GVBM",
-          "Ngữ văn",
-          "Khá",
-          "Em học tốt bộ môn Ngữ văn, cần phát huy.",
-        ],
-      ]);
-
-      const ws_thpt = XLSX.utils.aoa_to_sheet([
-        header,
-        [
-          "THPT",
-          "10",
-          "GVBM",
-          "Toán",
-          "Đạt",
-          "Em có cố gắng, cần làm bài tập nhiều hơn.",
-        ],
-        [
-          "THPT",
-          "10",
-          "GVBM",
-          "Toán",
-          "Cần cố gắng",
-          "Chú ý nghe giảng và ôn bài cũ.",
-        ],
-      ]);
-
-      const ws_hoc_ba = XLSX.utils.aoa_to_sheet([
-        header,
-        [
-          "THCS",
-          "6",
-          "HOC_BA",
-          "",
-          "",
-          "Năng lực chung: Tự chủ, tự học tốt\nNăng lực đặc thù: Vận dụng kiến thức tốt\nPhẩm chất: Chăm chỉ, trách nhiệm",
-        ],
-        [
-          "THCS",
-          "6",
-          "HOC_BA",
-          "",
-          "",
-          "Năng lực chung: Giao tiếp, hợp tác khá\nNăng lực đặc thù: Xử lý tình huống linh hoạt\nPhẩm chất: Yêu nước, nhân ái",
-        ],
-        [
-          "THCS",
-          "6",
-          "HOC_BA",
-          "",
-          "",
-          "Năng lực chung: Giải quyết vấn đề tốt\nNăng lực đặc thù: Tư duy phân tích tốt\nPhẩm chất: Trách nhiệm, trung thực",
-        ],
-        [
-          "THPT",
-          "10",
-          "HOC_BA",
-          "",
-          "",
-          "Hoàn thành tốt nhiệm vụ học tập, có ý thức kỷ luật tốt.",
-        ],
-      ]);
-
-      const cols = [
-        { wch: 10 },
-        { wch: 10 },
-        { wch: 12 },
-        { wch: 15 },
-        { wch: 10 },
-        { wch: 60 },
-      ];
-      ws_th["!cols"] = cols;
-      ws_thcs["!cols"] = cols;
-      ws_thpt["!cols"] = cols;
-      ws_hoc_ba["!cols"] = cols;
-
-      XLSX.utils.book_append_sheet(wb, ws_th, "TH");
-      XLSX.utils.book_append_sheet(wb, ws_thcs, "THCS");
-      XLSX.utils.book_append_sheet(wb, ws_thpt, "THPT");
-      XLSX.utils.book_append_sheet(wb, ws_hoc_ba, "HOC_BA");
-
-      XLSX.writeFile(wb, "MauNhanXet_TroLyAI.xlsx");
-    });
 });
 
 function ensureDataStructure() {
@@ -426,21 +168,12 @@ function ensureDataStructure() {
     modified = true;
   }
   if (!currentData[currentCapHoc][currentKhoiLop]) {
-    currentData[currentCapHoc][currentKhoiLop] = {
-      GVBM: {},
-      HOC_BA: [
-        "Học sinh có ý thức kỷ luật tốt, tích cực tham gia các hoạt động phong trào của lớp và nhà trường, hòa đồng với bạn bè.",
-        "Em ngoan ngoãn, lễ phép với thầy cô. Có ý thức tự giác trong học tập, hoàn thành tốt các nhiệm vụ được giao.",
-        "Năng nổ, nhiệt tình trong các hoạt động tập thể. Cần cố gắng tập trung hơn nữa trong các giờ học trên lớp.",
-        "Có tinh thần trách nhiệm cao, thường xuyên giúp đỡ bạn bè trong học tập. Học lực tiến bộ rõ rệt.",
-        "Chăm ngoan, biết vâng lời giáo viên. Tuy nhiên, em cần tự tin và mạnh dạn hơn trong việc phát biểu xây dựng bài.",
-      ],
-    };
+    currentData[currentCapHoc][currentKhoiLop] = { GVBM: {}, HOC_BA: [] };
     modified = true;
   }
   const kData = currentData[currentCapHoc][currentKhoiLop];
   if (currentRole === "GVBM") {
-    if (!kData.GVBM[currentMonHoc]) {
+    if (!kData.GVBM[currentMonHoc] || Object.keys(kData.GVBM[currentMonHoc]).length === 0) {
       kData.GVBM[currentMonHoc] = getEmptySubject(currentMonHoc);
       modified = true;
     }
@@ -457,139 +190,73 @@ function saveToStorage() {
 }
 
 function renderData() {
-  const grid = document.getElementById("commentsGrid");
-  grid.innerHTML = "";
+  const container = document.getElementById("configContainer");
+  container.innerHTML = "";
 
   ensureDataStructure();
 
   if (currentRole === "GVBM") {
-    const levels = [
-      {
-        id: "Giỏi",
-        bgStyle: "bg-green-50 text-green-700",
-        condition: "≥ 8.0/10",
-      },
-      { id: "Khá", bgStyle: "bg-blue-50 text-blue-700", condition: "≥ 6.5/10" },
-      {
-        id: "Đạt",
-        bgStyle: "bg-amber-50 text-amber-700",
-        condition: "≥ 5.0/10",
-      },
-      {
-        id: "Chưa Đạt",
-        bgStyle: "bg-red-50 text-red-700",
-        condition: "< 5.0/10",
-      },
-    ];
-
+    const levels = EVAL_LEVELS;
+    
     levels.forEach((l) => {
-      const items =
-        currentData[currentCapHoc][currentKhoiLop].GVBM[currentMonHoc][l.id] ||
-        [];
-      let html = `
-            <div class="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col h-[400px]">
-                <div class="flex justify-between items-start mb-4 shrink-0 border-b border-slate-100 pb-3">
-                    <div class="flex items-center gap-2">
-                        <span class="px-2.5 py-1 ${l.bgStyle} text-[10px] font-bold rounded-md uppercase tracking-wider">${l.id}</span>
-                        <span class="text-[10px] font-bold text-slate-400 capitalize">${l.condition}</span>
+      const gvbmData = currentData[currentCapHoc][currentKhoiLop].GVBM[currentMonHoc] || {};
+      const item = gvbmData[l] || { min: 0, max: 10, code: "", comments: [] };
+      const commentText = (item.comments || []).join('\n');
+      
+      let style = "bg-stone-50 border-stone-200 text-stone-700";
+      if (l === "Tốt" || l === "Giỏi") style = "bg-green-50 border-green-200 text-green-700";
+      if (l === "Khá") style = "bg-blue-50 border-blue-200 text-blue-700";
+      if (l === "Đạt") style = "bg-amber-50 border-amber-200 text-amber-700";
+      if (l === "Chưa Đạt") style = "bg-red-50 border-red-200 text-red-700";
+
+      container.innerHTML += `
+        <div class="bg-white border text-sm border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <div class="${style} px-5 py-3 border-b flex items-center gap-4">
+                <span class="px-2.5 py-1 bg-white/50 mix-blend-multiply border border-black/5 rounded-md shadow-sm font-bold uppercase tracking-widest text-[#2f3542] text-xs">${l}</span>
+                <span class="text-sm font-medium">Điểm: ${item.min} - ${item.max}</span>
+            </div>
+            
+            <div class="p-5 flex flex-col gap-5">
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Điểm TT</label>
+                        <input type="number" step="0.1" id="min_${l}" value="${item.min}" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 font-mono">
                     </div>
-                    <span class="text-xs font-semibold text-slate-400 bg-slate-50 px-2 rounded-full py-0.5">${items.length} mẫu</span>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Điểm TĐ</label>
+                        <input type="number" step="0.1" id="max_${l}" value="${item.max}" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Mã NX</label>
+                        <input type="text" id="code_${l}" value="${item.code || ''}" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 font-sans font-medium">
+                    </div>
                 </div>
-                <div class="space-y-4 overflow-y-auto pr-2 custom-scroll flex-1">
-            `;
 
-      items.forEach((item, idx) => {
-        html += `
-                <div class="group relative pb-4 border-b border-slate-50 last:border-0 last:pb-0 overflow-hidden">
-                    <p class="text-sm text-slate-700 leading-relaxed relative z-10 whitespace-pre-line pl-3 border-l-2 border-slate-200 group-hover:border-blue-400 transition-colors">
-                        ${item}
-                    </p>
-                    <div class="mt-3 flex gap-4 pl-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onclick="window.editItem('GVBM', ${idx}, '${l.id}')" class="text-[11px] font-semibold text-blue-500 hover:text-blue-700 cursor-pointer">Sửa lại</button>
-                        <button onclick="window.deleteItem('GVBM', ${idx}, '${l.id}')" class="text-[11px] font-semibold text-red-400 hover:text-red-600 cursor-pointer">Xóa mẫu</button>
-                    </div>
-                </div>`;
-      });
-
-      if (items.length === 0) {
-        html += `<p class="text-sm text-slate-400 italic py-4 text-center">Chưa có câu mẫu nào.</p>`;
-      }
-
-      html += `</div></div>`;
-      grid.innerHTML += html;
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Ngân hàng Lời nhận xét (Mỗi dòng một mẫu)</label>
+                    <textarea id="comments_${l}" rows="5" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 font-sans leading-relaxed transition-colors placeholder:text-slate-400 custom-scroll">${commentText}</textarea>
+                </div>
+            </div>
+        </div>
+      `;
     });
-    grid.className = "grid grid-cols-1 md:grid-cols-2 gap-6";
+    container.className = "grid grid-cols-1 xl:grid-cols-2 gap-6";
   } else {
     const items = currentData[currentCapHoc][currentKhoiLop].HOC_BA || [];
+    const textData = items.join('\n');
 
-    let html = `
-        <div class="bg-white p-8 border border-slate-200 rounded-2xl shadow-sm col-span-2">
-            <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-                <h2 class="text-base font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                   <div class="w-2 h-2 rounded-full bg-indigo-500"></div> Danh sách Mẫu Học bạ (${currentCapHoc} - Khối ${currentKhoiLop})
-                </h2>
-                <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">${items.length} mẫu đã lưu</span>
-            </div>
-            <div class="space-y-4">
-        `;
-
-    items.forEach((item, idx) => {
-      html += `
-            <div class="group flex items-start justify-between p-4 bg-slate-50/50 rounded-xl border border-transparent hover:border-slate-200 transition-colors">
-                <p class="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line">"${item}"</p>
-                <div class="flex gap-4 shrink-0 ml-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onclick="window.editItem('HOC_BA', ${idx})" class="text-[11px] font-semibold text-blue-500 hover:text-blue-700 cursor-pointer">Sửa</button>
-                    <button onclick="window.deleteItem('HOC_BA', ${idx})" class="text-[11px] font-semibold text-red-500 hover:text-red-700 cursor-pointer">Xóa</button>
-                </div>
-            </div>`;
-    });
-
-    if (items.length === 0) {
-      html += `<div class="p-8 text-center text-slate-400 italic bg-slate-50 rounded-xl border border-dashed border-slate-200">Chưa có mẫu nào ở mục này. Hãy ấn thêm mới!</div>`;
-    }
-
-    html += `</div></div>`;
-    grid.innerHTML = html;
-    grid.className = "grid grid-cols-1 gap-6";
+    container.innerHTML = `
+        <div class="bg-white border text-sm border-slate-200 rounded-xl overflow-hidden shadow-sm p-6">
+            <h2 class="text-base font-bold text-slate-800 uppercase tracking-widest mb-4">Danh sách Mẫu Học bạ (${currentCapHoc} - Khối ${currentKhoiLop})</h2>
+            
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Ngân hàng Lời nhận xét (Mỗi dòng một mẫu)</label>
+            <textarea id="hocba_content" rows="15" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 font-sans leading-relaxed placeholder:text-slate-400">${textData}</textarea>
+            
+            <p class="text-[11px] text-slate-500 mt-3 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              Bạn có thể dán danh sách lời phê vào đây. Mỗi dòng sẽ được hiểu là một mẫu (khi dùng AI sẽ được hỗ trợ trộn).
+            </p>
+        </div>
+    `;
   }
 }
-
-window.editItem = function (role, idx, level = null) {
-  window.editingIndex = idx;
-  window.editingLevel = level;
-
-  const modal = document.getElementById("editModal");
-  document.getElementById("modalTitle").innerText = `Chỉnh Sửa Lời Phê`;
-
-  let content = "";
-  if (role === "GVBM") {
-    content =
-      currentData[currentCapHoc][currentKhoiLop].GVBM[currentMonHoc][level][
-        idx
-      ];
-    document.getElementById("entryLevel").value = level;
-    document.getElementById("levelSelectContainer").style.display = "block";
-  } else {
-    content = currentData[currentCapHoc][currentKhoiLop].HOC_BA[idx];
-    document.getElementById("levelSelectContainer").style.display = "none";
-  }
-  document.getElementById("entryContent").value = content;
-
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
-};
-
-window.deleteItem = function (role, idx, level = null) {
-  if (!confirm("Bạn có chắc chắn muốn xóa lời phê này?")) return;
-
-  if (role === "GVBM") {
-    currentData[currentCapHoc][currentKhoiLop].GVBM[currentMonHoc][
-      level
-    ].splice(idx, 1);
-  } else {
-    currentData[currentCapHoc][currentKhoiLop].HOC_BA.splice(idx, 1);
-  }
-
-  saveToStorage();
-  renderData();
-};

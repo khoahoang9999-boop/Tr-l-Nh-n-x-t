@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Trợ lý Nhận xét Pro",
-  "version": "1.0.4",
+  "version": "1.0.0",
   "description": "Tiện ích mở rộng giúp giáo viên tự động điền nhận xét điểm thường xuyên và học bạ",
   "permissions": [
     "storage",
